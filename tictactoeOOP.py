@@ -36,6 +36,7 @@ class Board():
         """Switch the EMPTY spot to either x or o. 
         If the spot is out of range return 0, occupied return 1
         The integers are for the switch turn function in the game_loop"""
+
         if self._out_of_range(col, row):
             print("The spot that you have chosen is out of range")
             return 0
@@ -50,7 +51,6 @@ class Game():
         self.p1 = "o"
         self.p2 = "x"
         self.turn = None
-        self.other_player = None
         self.winner = None
 
     def check_win(self, board_object):
@@ -81,6 +81,10 @@ class Game():
             the_winner = self.turn
         if len(set(diagonal_from_right)) == 1 and diagonal_from_right[0] == self.turn:
             the_winner = self.turn
+
+        tie_board = col_list_1 + col_list_2 + col_list_3
+        if EMPTY not in tie_board:
+            the_winner = "It's a tie!"
         
         return the_winner
         
@@ -96,10 +100,8 @@ class Game():
         randnum = random.randint(0,1)
         if randnum == 0:
             self.turn = self.p1
-            self.other_player = self.p2
         else:
             self.turn = self.p2
-            self.other_player = self.p1
         return self.turn
 
     def game_loop(self, the_board, the_player):
@@ -110,8 +112,12 @@ class Game():
             new_board = the_board.switch(int(coordinate_list[0]),int(coordinate_list[1]), the_player)
             print(the_board)
 
-            if self.check_win(the_board):
-                print("The winner is {}".format(self.turn))
+            winner = self.check_win(the_board)
+            if winner:
+                if len(winner) > 1:
+                    print(winner) 
+                else:  
+                    print("The winner is {}".format(self.turn))
                 break
 
             if new_board == 0: #zero means that the spot was out of range
