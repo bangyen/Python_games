@@ -129,6 +129,7 @@ class Player(Ship):
     def get_player_healthbar_height(self):
         return self.healthbar_size
 
+
 class Enemy(Ship):
     COLOR_MAP = {
         "red": (RED_SPACE_SHIP,RED_LASER),
