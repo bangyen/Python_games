@@ -23,8 +23,23 @@ GREEN_LASER = pygame.image.load(os.path.join("space_shooter/assets", "pixel_lase
 BLUE_LASER = pygame.image.load(os.path.join("space_shooter/assets", "pixel_laser_blue.png"))
 YELLOW_LASER = pygame.image.load(os.path.join("space_shooter/assets", "pixel_laser_red.png"))
 
+HEART = pygame.image.load(os.path.join("space_shooter/assets", "pixel_heart.png"))
+
 #Background
 BG = pygame.transform.scale(pygame.image.load(os.path.join("space_shooter/assets", "background-black.png")),(WIDTH, HEIGHT))
+
+class Heart():
+    def __init__(self, x, y):
+        self.x = y
+        self.y = y
+        self.img = HEART
+        self.mask = pygame.mask.from_surface(self.img)
+
+    def draw(self, window):
+        window.blit(self.img, (self.x, self.y))
+
+    def collision(self, obj):
+        return collide(self, obj)
 
 class Laser():
     def __init__(self, x, y, img):
@@ -81,7 +96,9 @@ class Ship():
             self.cool_down_counter += 1
 
     def shoot(self):
-        """If the user presses space"""
+        """If the user presses space, when self.lasers
+         is empty the ship cant shoot laser"""
+
         if self.cool_down_counter == 0:
             laser = Laser(self.x, self.y, self.laser_img)
             self.lasers.append(laser)
@@ -177,9 +194,13 @@ def main():
     enemy_velocity = 1
 
     #Player variables
+    player_heart_collected = False
     player_velocity = 5
-    laser_velocity = 5
+    laser_velocity = 5  
     player = Player(150, 325)
+
+    #heart object for increasing the player's health
+    heart_list = []
 
     #Variables for the lost functionality
     lost = False
@@ -188,6 +209,7 @@ def main():
     clock = pygame.time.Clock()
     def redraw_window():
         """Draws objects and blits text on the window"""
+
         WIN.blit(BG,(0,0))
         
         lives_label = main_font.render("Lives: {}".format(lives), 1, (255,255,255))
@@ -199,14 +221,16 @@ def main():
         
         for enemy in enemies:
             enemy.draw(WIN)
-        
+
+        if len(heart_list) == 1:
+            for heart in heart_list:
+                heart.draw(WIN)
+
         if lost:
             lost_label = lost_font.render("You lost!", 1, (255,255,255))
             WIN.blit(lost_label, (WIDTH / 2 - lost_label.get_width() / 2, HEIGHT / 2))
 
-
         player.draw(WIN)
-
         pygame.display.update()
     
     while run:
@@ -230,7 +254,18 @@ def main():
             for _ in range(wave_length):
                 enemy = Enemy(random.randrange(50, WIDTH-100), random.randrange(-1500, -100), random.choice(["red", "blue", "green"])) #Span location of the enemies
                 enemies.append(enemy)
-    
+
+        #Heart spawner
+        if len(heart_list) == 0:
+            if level % 2 == 0: #Change 2 to 5 for extreme difficulty 
+                if player_heart_collected:
+                    pass
+                else:
+                    heart = Heart(random.randrange(0, WIDTH), random.randrange(0, HEIGHT)) 
+                    heart_list.append(heart)
+            else:
+                player_heart_collected = False
+            
         #Event handlers
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -249,9 +284,10 @@ def main():
             player.y += player_velocity
         if keys[pygame.K_SPACE]:
             player.shoot()
+        if keys[pygame.K_b]:
+            main_menu()
         if keys[pygame.K_ESCAPE]:
             quit()
-
 
         #enemies functionality
         for enemy in enemies[:]:
@@ -269,24 +305,93 @@ def main():
             if random.randrange(0, 2*FPS) == 1: #probability of 1 shot every 2 seconds 
                 enemy.shoot()
 
+        #heart functionality
+        for heart in heart_list[:]:
+            if collide(heart, player):
+                player.health += 30
+                if player.health > 100:
+                    player.health = 100
+                heart_list.remove(heart)
+                player_heart_collected = True
 
         player.move_lasers(-laser_velocity, enemies) #laser's velocity is negative (moves upwards)
 
-def main_menu():
+
+def options():
     title_font = pygame.font.SysFont("comicsans", 70)
+    back_font = pygame.font.SysFont("comicsans", 25)
+
     run = True
 
     while run:
         WIN.blit(BG, (0,0))
-        title_label = title_font.render("Press the mouse to begin...", 1, (255,255,255))
-        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, HEIGHT / 2))
+        title_label = title_font.render("Options", 1, (255,255,255))
+        back_label = back_font.render("Press b to go back on the main menu screen", 1, (255,255,255))
+        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, 10))
+        WIN.blit(back_label,(WIDTH / 2 - back_label.get_width() / 2, 80))
 
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_b]:
+            main_menu()
+        if keys[pygame.K_ESCAPE]:
+            quit()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+
+        pygame.display.update()
+
+def main_menu():
+    click = False
+    main_menu_font = pygame.font.SysFont("comicsans", 70)
+
+    run = True
+    while run:
+        WIN.blit(BG, (0,0))
+        title_label = main_menu_font.render("Main menu", 1, (255,255,255))
+        play_label = main_menu_font.render("Play", 1, (255,255,255))
+        option_label = main_menu_font.render("Options", 1, (255,255,255))
+        
+        #mouse event handler
+        mx, my = pygame.mouse.get_pos()
+
+        #Menu buttons
+        button_width = 250
+        button_height = 100
+        play_button = pygame.Rect(WIDTH / 2 - button_width / 2, HEIGHT / 3 - button_height / 2 + 20, button_width, button_height)
+        option_button = pygame.Rect(WIDTH / 2 - button_width / 2 , HEIGHT / 3 + button_height / 2 + 60, button_width, button_height)
+
+        #Draw the buttons and rect color for mouseover
+        rect_color = (29,41,81)
+        pygame.draw.rect(WIN, rect_color, play_button)
+        pygame.draw.rect(WIN, rect_color, option_button)
+
+        #Blit the title, play and option text
+        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, 10))
+        WIN.blit(play_label, (WIDTH / 2 - play_label.get_width() / 2, HEIGHT / 3 + button_height / 2 - 50))
+        WIN.blit(option_label, (WIDTH / 2 - option_label.get_width() / 2, HEIGHT / 3 + button_height / 2 + 85))
+
+        if play_button.collidepoint((mx, my)):
+            if click:
+                main()
+        if option_button.collidepoint((mx, my)):
+            if click:
+                options()
+
+        click = False
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                main()
-    pygame.quit()
+                if event.button == 1:
+                    click = True
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            quit()
+            
+    quit()
 
 main_menu()
