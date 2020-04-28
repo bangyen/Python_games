@@ -63,7 +63,7 @@ class Laser():
 
 #Parent class
 class Ship():
-    COOLDOWN = 30
+    COOLDOWN = 30 #8 With cheats activated
     def __init__(self, x, y, health=100):
         self.x = x
         self.y = y
@@ -175,14 +175,39 @@ def collide(obj1, obj2):
     offset_y = obj2.y - obj1.y  
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None # (x,y)
 
+class Cheats():
+    def __init__(self):
+        self.cheat_lives = 0
+        self.activation_fastshot = "Deactivated" 
+        self.activation_endlesslife = "Deactivated"
 
-def main():
+    def display_cheet_menu(self):
+        title_font = pygame.font.SysFont("comicsans", 70)
+        back_font = pygame.font.SysFont("comicsans", 25)
+        setting_font = pygame.font.SysFont("comicsans", 25)
+
+        title_label = title_font.render("Options", 1, (255,255,255))
+        back_label = back_font.render("Press b to go back on the main menu screen", 1, (255,255,255))
+        no_cooldown_label = setting_font.render("Press 1 to activate a faster shooting gun for the main player ship: " + self.activation_fastshot, 1, (255,255,255))
+        endless_lives_label = setting_font.render("Press 2 to activate endless lives: " + self.activation_endlesslife, 1, (255,255,255))
+        reset_label = setting_font.render("Press r to reset everything", 1, (255,255,255))
+        
+        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, 10))
+        WIN.blit(back_label,(WIDTH / 2 - back_label.get_width() / 2, 80))
+
+        #Blit the cheat code text
+        WIN.blit(no_cooldown_label, (WIDTH / 2 - no_cooldown_label.get_width() / 2, HEIGHT / 3))
+        WIN.blit(endless_lives_label, (WIDTH / 2 - no_cooldown_label.get_width() / 2, HEIGHT / 3 + 20))
+        WIN.blit(reset_label, (WIDTH / 2 - reset_label.get_width() / 2, HEIGHT - 50))
+        
+
+def main(cheat):
     run = True
     FPS = 60 #60 frames per second
     
     #Display scores
     level = 0
-    lives = 5
+    lives = 5 + cheat.cheat_lives
 
     #fonts
     main_font = pygame.font.SysFont("comicsans", 50)
@@ -261,7 +286,7 @@ def main():
                 if player_heart_collected:
                     pass
                 else:
-                    heart = Heart(random.randrange(0, WIDTH), random.randrange(0, HEIGHT)) 
+                    heart = Heart(random.randrange(10, WIDTH - 10), random.randrange(30, HEIGHT - 30)) 
                     heart_list.append(heart)
             else:
                 player_heart_collected = False
@@ -285,7 +310,7 @@ def main():
         if keys[pygame.K_SPACE]:
             player.shoot()
         if keys[pygame.K_b]:
-            main_menu()
+            main_menu(cheat)
         if keys[pygame.K_ESCAPE]:
             quit()
 
@@ -317,32 +342,40 @@ def main():
         player.move_lasers(-laser_velocity, enemies) #laser's velocity is negative (moves upwards)
 
 
-def options():
-    title_font = pygame.font.SysFont("comicsans", 70)
-    back_font = pygame.font.SysFont("comicsans", 25)
+def options(cheat):
+    """This is the cheat menu. All the windows take the cheat 
+    object as an attribute so the cheat window saves its data"""
 
     run = True
-
     while run:
         WIN.blit(BG, (0,0))
-        title_label = title_font.render("Options", 1, (255,255,255))
-        back_label = back_font.render("Press b to go back on the main menu screen", 1, (255,255,255))
-        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, 10))
-        WIN.blit(back_label,(WIDTH / 2 - back_label.get_width() / 2, 80))
 
+        cheat.display_cheet_menu() #Cheat menu object
+        
         keys = pygame.key.get_pressed()
         if keys[pygame.K_b]:
-            main_menu()
+            main_menu(cheat)
         if keys[pygame.K_ESCAPE]:
             quit()
-
+        if keys[pygame.K_1]:
+            Player.COOLDOWN = 8 
+            cheat.activation_fastshot = "Activated"
+        if keys[pygame.K_2]:
+            cheat.cheat_lives = 9999999994
+            cheat.activation_endlesslife = "Activated"
+        if keys[pygame.K_r]:
+            Player.COOLDOWN = 30 #default cooldown speed
+            cheat.cheat_lives = 0
+            cheat.activation_fastshot = "Deactivated"
+            cheat.activation_endlesslife = "Deactivated"
+            
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
 
         pygame.display.update()
 
-def main_menu():
+def main_menu(cheat):
     click = False
     main_menu_font = pygame.font.SysFont("comicsans", 70)
 
@@ -374,10 +407,10 @@ def main_menu():
 
         if play_button.collidepoint((mx, my)):
             if click:
-                main()
+                main(cheat)
         if option_button.collidepoint((mx, my)):
             if click:
-                options()
+                options(cheat)
 
         click = False
         pygame.display.update()
@@ -394,4 +427,4 @@ def main_menu():
             
     quit()
 
-main_menu()
+main_menu(Cheats())
