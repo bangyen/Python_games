@@ -5,7 +5,7 @@ import pygame
 
 #Window setup
 pygame.font.init()
-WIDTH, HEIGHT = 900, 500
+WIDTH, HEIGHT = 700, 450
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("The Classic Pong Game")
 
@@ -22,11 +22,11 @@ class Plank():
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
 
-    def move_up(self):
-        pass
+    def move_up(self, velocity):
+        self.y -= velocity
 
-    def move_down(self):
-        pass
+    def move_down(self, velocity):
+        self.y += velocity
 
     def get_width(self):
         return self.img.get_width()
@@ -54,6 +54,9 @@ def main():
     run = True
     FPS = 60
 
+    #fonts
+    score_font = pygame.font.SysFont("comicsans", 70)
+
     #score variables
     score_1 = 0
     score_2 = 0
@@ -61,6 +64,7 @@ def main():
     #players
     player1 = Player_1(0, HEIGHT / 2 - 50)
     player2 = Player_2(200, HEIGHT / 2 - 50)
+    velocity = 7
 
     
     clock = pygame.time.Clock()
@@ -69,6 +73,19 @@ def main():
          blits the text on the window"""
         WIN.fill((0,0,0))
 
+        score_1_label = score_font.render("{}".format(score_1),1, (255,255,255))
+        score_2_label = score_font.render("{}".format(score_2),1, (255,255,255))
+
+        #Draw the text
+        WIN.blit(score_1_label, (WIDTH / 4, 40))
+        WIN.blit(score_2_label, ((3 * WIDTH) / 4, 40))
+
+        #draw the dotted line 
+        space_margin = 0
+        for i in range(0,HEIGHT):
+            space_margin += 50
+            pygame.draw.line(WIN, (255,255,255), (WIDTH / 2, 0), (WIDTH / 2, i))
+            pygame.draw.line(WIN, (0,0,0), (WIDTH / 2, space_margin), (WIDTH / 2, i)) #nope :(
 
         player1.draw(WIN)
         player2.draw(WIN)
@@ -88,6 +105,16 @@ def main():
 
         #Key handlers
         keys = pygame.key.get_pressed()
+        #for player1
+        if keys[pygame.K_w] and player1.y > 0:
+            player1.move_up(velocity)
+        if keys[pygame.K_s] and player1.y < HEIGHT - player1.get_height():
+            player1.move_down(velocity) 
+        #for player2
+        if keys[pygame.K_UP] and player2.y > 0:
+            player2.move_up(velocity) 
+        if keys[pygame.K_DOWN] and player2.y < HEIGHT - player2.get_height():
+            player2.move_down(velocity)
 
 
 main()
