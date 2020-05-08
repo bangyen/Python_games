@@ -1,7 +1,6 @@
 import random 
 import time
 import os
-import math
 import pygame
 
 #Window setup
@@ -61,16 +60,15 @@ class Ball():
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
 
-    def move_south_north(self, velocity, south_bool):
-        if south_bool:
+    def move(self, velocity, down, right):
+        if down:
             self.x += 0
             self.y += velocity
         else:
             self.x += 0
             self.y -= velocity
 
-    def move_east_west(self, velocity, east_bool):
-        if east_bool:
+        if right:
             self.x += velocity
             self.y += 0
         else:
@@ -88,7 +86,7 @@ def collide(obj1, obj2):
     """This function uses pygame mask's overlap to check if obj1 hits the obj2"""
     offset_x = obj2.x - obj1.x #The difference between obj1 and obj 2
     offset_y = obj2.y - obj1.y  
-    return obj1.mask.overlap(obj2.mask, (math.floor(offset_x), math.floor(offset_y))) != None # (x,y)
+    return obj1.mask.overlap(obj2.mask, (int(offset_x), int(offset_y))) != None # (x,y)
 
 
 def main():
@@ -105,13 +103,13 @@ def main():
     #players
     player1 = Player_1(0, HEIGHT / 2 - 50)
     player2 = Player_2(200, HEIGHT / 2 - 50)
-    plank_velocity = 7
-
+    plank_velocity = 5
+   
     #The ball variables
+    ball_list = []
     move_down = True
-    ball_plank_collistion = False
-    ball = Ball(WIDTH / 2, random.randrange(5, HEIGHT - 5))
-    ball_velocity = 2
+    ball_left_direction = True
+    ball_velocity = 5
 
     clock = pygame.time.Clock()
     def redraw_window():
@@ -138,35 +136,75 @@ def main():
         player2.draw(WIN)
 
         #Draw the ball at with a random height position 
-        ball.draw(WIN)
+        if len(ball_list) == 1:
+            for ball in ball_list:
+                ball.draw(WIN)
+    
 
         pygame.display.update()
+
+    def collide_ball_player2(player2, ball):
+        if collide(player2, ball):
+            ball.move(ball_velocity, True, False)
+            return True 
+        return False
+
+    def collide_ball_player1(player1, ball):
+        if collide(player1, ball):
+            ball.move(ball_velocity, True, True)
+            return True
+        return False
 
     while run:
         clock.tick(FPS)
         redraw_window()
 
-        print(ball.y)
+        if ball_list == []:
+            ball = Ball(WIDTH / 2, random.randrange(5, HEIGHT - 5))
+            ball_list.append(ball)
 
-        if move_down:
-            if ball.y + ball.get_height() < HEIGHT + 35: 
-                ball.move_south_north(ball_velocity, True)
-            else:
-                move_down = False
-        else:
-            if ball.y > -35: #-35 because of the margin of the ball png
-                ball.move_south_north(ball_velocity, False)
-            else:
-                move_down = True
+        if ball.x + ball.get_width() == 0:
+            ball_list.remove(ball)
+            score_2 += 1
+        elif ball.x == WIDTH:
+            ball_list.remove(ball)
+            score_1 += 1
 
-        
-        if collide(player2, ball): #collision works
-            ball.move_east_west(ball_velocity, False)
-        elif collide(player1, ball):
-            ball.move_east_west(ball_velocity, True)
-    
-            
-            
+        """If the ball does not collide with player2 (arrow keys),  
+        the ball goes to the left and it moves down then set its boundaries for moving up and down
+        If the ball does not collide with player2 (arrow keys) and the ball goes to the right then 
+        set its up and down boundaries. If the ball does collide with either player1 or player2 then
+        ball_left_direction = True or False otherwise"""
+        for ball in ball_list:
+            if not collide_ball_player2(player2, ball):
+                if ball_left_direction:
+                    if move_down:
+                        if ball.y + ball.get_height() < HEIGHT + 35: 
+                            ball.move(ball_velocity, True, True)
+                        else:
+                            move_down = False
+                    else:
+                        if ball.y > -35: #-35 because of the margin of the ball png
+                            ball.move(ball_velocity, False, True)
+                        else:
+                            move_down = True
+                else:
+                    if collide_ball_player1(player1, ball):
+                        ball_left_direction = True
+                    else:
+                        if move_down:
+                            if ball.y + ball.get_height() < HEIGHT + 35: 
+                                ball.move(ball_velocity, True, False)
+                            else:
+                                move_down = False
+                        else:
+                            if ball.y > -35: #-35 because of the margin of the ball png
+                                ball.move(ball_velocity, False, False)
+                            else:
+                                move_down = True
+            else:
+                ball_left_direction = False
+
         #Event handlers
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -184,7 +222,6 @@ def main():
             player2.move_up(plank_velocity) 
         if keys[pygame.K_DOWN] and player2.y < HEIGHT - player2.get_height():
             player2.move_down(plank_velocity)
-
 
 main()
     
