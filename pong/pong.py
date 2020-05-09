@@ -54,26 +54,30 @@ class Ball():
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.velocity = 5
         self.img = red_pixel_pong_ball
         self.mask = pygame.mask.from_surface(self.img)
     
     def draw(self, window):
         window.blit(self.img, (self.x, self.y))
 
-    def move(self, velocity, down, right):
+    def move(self, down, right):
         if down:
             self.x += 0
-            self.y += velocity
+            self.y += self.velocity
         else:
             self.x += 0
-            self.y -= velocity
+            self.y -= self.velocity
 
         if right:
-            self.x += velocity
+            self.x += self.velocity
             self.y += 0
         else:
-            self.x -= velocity
+            self.x -= self.velocity
             self.y += 0
+
+    def increase_velocity(self):
+        self.velocity += 0.25
             
     def get_width(self):
         return self.img.get_width()
@@ -109,7 +113,6 @@ def main():
     ball_list = []
     move_down = True
     ball_left_direction = True
-    ball_velocity = 5
 
     clock = pygame.time.Clock()
     def redraw_window():
@@ -140,18 +143,19 @@ def main():
             for ball in ball_list:
                 ball.draw(WIN)
     
-
         pygame.display.update()
 
     def collide_ball_player2(player2, ball):
         if collide(player2, ball):
-            ball.move(ball_velocity, True, False)
+            ball.increase_velocity()
+            ball.move(True, False)
             return True 
         return False
 
     def collide_ball_player1(player1, ball):
         if collide(player1, ball):
-            ball.move(ball_velocity, True, True)
+            ball.increase_velocity()
+            ball.move(True, True)
             return True
         return False
 
@@ -159,14 +163,15 @@ def main():
         clock.tick(FPS)
         redraw_window()
 
+
         if ball_list == []:
             ball = Ball(WIDTH / 2, random.randrange(5, HEIGHT - 5))
             ball_list.append(ball)
 
-        if ball.x + ball.get_width() == 0:
+        if ball.x + ball.get_width() <= 0:
             ball_list.remove(ball)
             score_2 += 1
-        elif ball.x == WIDTH:
+        elif ball.x >= WIDTH:
             ball_list.remove(ball)
             score_1 += 1
 
@@ -176,30 +181,30 @@ def main():
         set its up and down boundaries. If the ball does collide with either player1 or player2 then
         ball_left_direction = True or False otherwise"""
         for ball in ball_list:
-            if not collide_ball_player2(player2, ball):
+            if not collide_ball_player2(player2, ball): #player2's turn (arrow keys)
                 if ball_left_direction:
                     if move_down:
                         if ball.y + ball.get_height() < HEIGHT + 35: 
-                            ball.move(ball_velocity, True, True)
+                            ball.move(True, True)
                         else:
                             move_down = False
                     else:
                         if ball.y > -35: #-35 because of the margin of the ball png
-                            ball.move(ball_velocity, False, True)
+                            ball.move(False, True)
                         else:
                             move_down = True
                 else:
-                    if collide_ball_player1(player1, ball):
+                    if collide_ball_player1(player1, ball): #player1's turn (w and s)
                         ball_left_direction = True
                     else:
                         if move_down:
                             if ball.y + ball.get_height() < HEIGHT + 35: 
-                                ball.move(ball_velocity, True, False)
+                                ball.move(True, False)
                             else:
                                 move_down = False
                         else:
                             if ball.y > -35: #-35 because of the margin of the ball png
-                                ball.move(ball_velocity, False, False)
+                                ball.move(False, False)
                             else:
                                 move_down = True
             else:
@@ -223,6 +228,34 @@ def main():
         if keys[pygame.K_DOWN] and player2.y < HEIGHT - player2.get_height():
             player2.move_down(plank_velocity)
 
-main()
-    
+def main_menu():
+    main_menu_font = pygame.font.SysFont("comicsans", 70)
+    instruction_font = pygame.font.SysFont("comicsans", 30)
 
+    run = True
+    while run:
+        WIN.fill((0,0,0))
+
+        title_label = main_menu_font.render("Main menu", 1, (255,255,255))
+        instruction_label_p1 = instruction_font.render("Player 1: Move up (arrow key up) | Move down (arrow key down)", 1, (255,255,255))
+        instruction_label_p2 = instruction_font.render("Player 2: Move up (w) | Move down (s)", 1, (255,255,255))
+        mouse_click_label = instruction_font.render("Click anywhere on the screen to begin the game!", 1, (255,255,255))
+        WIN.blit(title_label,(WIDTH / 2 - title_label.get_width() / 2, 10))
+        WIN.blit(instruction_label_p1, (WIDTH / 10, 2*HEIGHT / 7))
+        WIN.blit(instruction_label_p2, (WIDTH / 10, 2*HEIGHT / 5))
+        WIN.blit(mouse_click_label, (WIDTH / 2 - mouse_click_label.get_width() / 2, 3*HEIGHT / 4))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False 
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                main()
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            quit()
+
+main_menu()
+        
