@@ -227,6 +227,8 @@ def main():
             player2.move_up(plank_velocity) 
         if keys[pygame.K_DOWN] and player2.y < HEIGHT - player2.get_height():
             player2.move_down(plank_velocity)
+        if keys[pygame.K_ESCAPE]:
+            quit()
 
 def main_menu():
     main_menu_font = pygame.font.SysFont("comicsans", 70)
