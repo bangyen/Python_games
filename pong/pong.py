@@ -163,7 +163,6 @@ def main():
         clock.tick(FPS)
         redraw_window()
 
-
         if ball_list == []:
             ball = Ball(WIDTH / 2, random.randrange(5, HEIGHT - 5))
             ball_list.append(ball)
