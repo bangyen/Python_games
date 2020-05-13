@@ -45,24 +45,19 @@ class Ball():
         velocity_y = math.sin(angle) * power
 
         dist_x = velocity_x * time # s = v * t the first ever physic equation that I learned
-        dist_y = (velocity_y * time) + (((gravity_constant / 2) * (time)**2) / 2)
+        dist_y = (velocity_y * time) + (((gravity_constant / 2) * (time)**2) / 2) # y = 1/2 gt^2 + v0t + y0
 
         new_x = round(dist_x + start_x)
         new_y = round(start_y - dist_y)
-        print(power)
+        #print(power)
         #print(angle)
         #print(time)
-        print(new_x, new_y)
+        print("Calculated coordinates:", new_x, new_y)
 
         return (new_x, new_y)
 
 
-
-def collide(obj1, obj2):
-    """This function uses pygame mask's overlap to check if obj1 hits the obj2"""
-    offset_x = obj2.x - obj1.x #The difference between obj1 and obj 2
-    offset_y = obj2.y - obj1.y  
-    return obj1.mask.overlap(obj2.mask, (int(offset_x), int(offset_y))) != None # (x,y)
+    
 
 def main():
     run = True
@@ -82,6 +77,7 @@ def main():
     power = 0
     angle = 0
     shoot = False
+
 
     def find_angle(pos):
         """Takes a pos = tuple which is the mouse position and returns 
@@ -115,11 +111,12 @@ def main():
 
         golf_stickman.draw(WIN)
         golf_ball.draw(WIN)
+    
 
         if shoot:
             pass
         else:
-            pygame.draw.line(WIN, (255,255,255), line[0], line[1])
+            pygame.draw.line(WIN, (0,0,0), line[0], line[1])
 
         pygame.display.update()
 
@@ -129,16 +126,16 @@ def main():
         line = [(golf_ball.x, golf_ball.y), (mouse_x, mouse_y)]
         redraw_window()
 
+        #print(ball_start_x,ball_start_y)
+
         if shoot:
             """Still need to figure out to stop the ball when 
             it hits a rectangle or another surface"""
-    
             time += 0.2 #how fast the ball goes, depends on how fast your computer is
             if golf_ball.y < HEIGHT:
                 next_position = Ball.ball_path(ball_start_x, ball_start_y, power, angle, time)
-                golf_ball.x = next_position[0]
+                golf_ball.x = next_position[0] 
                 golf_ball.y = next_position[1]
-                print(next_position)
             else:
                 shoot = False
                 golf_ball.y = HEIGHT - golf_ball.radius
@@ -149,16 +146,14 @@ def main():
             if event.type == pygame.QUIT:
                 quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                print("SHOOT")
                 if shoot == False:
                     shoot = True
                     ball_start_x = golf_ball.x
                     ball_start_y = golf_ball.y
                     time = 0
                     vector = [line[1][0] - line[0][0], line[1][1] - line[0][1]]
-                    power = (math.sqrt((vector[0])**2 + (vector[1])**2)) / 8 #get the length of the line, divide by 8 so it is not a big number
-                    angle = find_angle((mouse_x, mouse_y))
-        
+                    power = (math.sqrt((vector[0])**2 + (vector[1])**2)) / 7.5 #get the length of the line, divide by 8 so it is not a big number
+                    angle = find_angle((mouse_x, mouse_y))      
 
 main()
 
