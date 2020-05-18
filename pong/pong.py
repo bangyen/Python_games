@@ -228,6 +228,8 @@ def main():
             player2.move_down(plank_velocity)
         if keys[pygame.K_ESCAPE]:
             quit()
+        if keys[pygame.K_b]:
+            main_menu()
 
 def main_menu():
     main_menu_font = pygame.font.SysFont("comicsans", 70)
@@ -250,7 +252,7 @@ def main_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False 
+                quit() 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 main()
 
