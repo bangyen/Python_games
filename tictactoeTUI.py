@@ -38,10 +38,8 @@ class Board():
         The integers are for the switch turn function in the game_loop"""
 
         if self._out_of_range(col, row):
-            print("The spot that you have chosen is out of range")
             return 0
         if self._check_occupied(col, row):
-            print("This spot is taken!")
             return 1
         else:
             self.board[row - 1][col - 1] = player
@@ -87,7 +85,7 @@ class Game():
             the_winner = "It's a tie!"
         
         return the_winner
-        
+
     def switch_turn(self):
         if self.turn == self.p1:
             self.turn = self.p2
@@ -104,14 +102,30 @@ class Game():
             self.turn = self.p2
         return self.turn
 
+    def check_valid_input(self, player_input):
+        coordinate_list = player_input.split(",")
+        try:
+            int(coordinate_list[0]), int(coordinate_list[1])
+            return True
+        except ValueError:
+            return False
+        except IndexError:
+            return False
+
     def game_loop(self, the_board, the_player):
         player_input = str(input("Input two numbers seperated with a comma (x,y): "))
-
+        
         while player_input != QUIT:
-            coordinate_list = player_input.split(",")
-            new_board = the_board.switch(int(coordinate_list[0]),int(coordinate_list[1]), the_player)
-            print(the_board)
+            if self.check_valid_input(player_input):
+                pass
+            else:
+                print("That is not a valid input!")
+                self.game_loop(the_board, the_player) #Recursion, The player can input an invalid input 999 times, over 999 causes a stack overflow
 
+            x, y = player_input.split(",")
+            new_board = the_board.switch(int(x), int(y), the_player)
+            print(the_board)
+        
             winner = self.check_win(the_board)
             if winner:
                 if len(winner) > 1:
@@ -121,9 +135,9 @@ class Game():
                 break
 
             if new_board == 0: #zero means that the spot was out of range
-                pass
+                print("The spot that you have chosen is out of range")
             elif new_board == 1: #one means that the spot was occupied
-                pass
+                print("This spot is taken!")
             else:
                 the_player = self.switch_turn() #if new board returns none (no integer values), switch the player
         
