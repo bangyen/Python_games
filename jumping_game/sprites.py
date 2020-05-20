@@ -1,6 +1,6 @@
 #Sprite classes for our jumping game
 import pygame
-from random import choice 
+from random import choice, randrange
 from game_settings import *
 
 
@@ -24,7 +24,9 @@ class Spritesheet():
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, game):
-        super().__init__()
+        self._layer = PLAYER_LAYER
+        self.groups = game.all_sprites
+        super().__init__(self.groups)
         self.game = game #access all the variables from the Game class
         self.walking = False
         self.jumping = False 
@@ -37,6 +39,7 @@ class Player(pygame.sprite.Sprite):
         self.pos = vector(40, HEIGHT - 100) #Vector where the position of the player is
         self.velocity = vector(0, 0) #Player's velocity vector
         self.acceleration = vector(0, 0) #Player acceleration vector
+        self.mask = pygame.mask.from_surface(self.image) #for pixel perfect collision
 
     def _load_images(self):
         self.standing_frames = [self.game.spritesheet.get_image(614, 1063, 120, 191), self.game.spritesheet.get_image(690, 406, 120, 201)]
@@ -49,7 +52,6 @@ class Player(pygame.sprite.Sprite):
             frame.set_colorkey(BLACK) #remove the black background
 
     def _animate(self):
-        #print(int(self.velocity.x))
         time_now = pygame.time.get_ticks()
         if int(self.velocity.x) != 0: #self.velocity.x is approching to 0 ex. 0.0000000123243 due to friction
             self.walking = True
@@ -113,6 +115,7 @@ class Player(pygame.sprite.Sprite):
         if hits and not self.jumping:
             self.jumping = True
             self.velocity.y += PLAYER_JUMP
+            self.game.jump_sound.play()
 
     def cut_jump(self):
         """Cut jump (mini jump) the player by dividing the total jump height by 4"""
@@ -124,17 +127,90 @@ class Player(pygame.sprite.Sprite):
 
 class Platform(pygame.sprite.Sprite):
     def __init__(self, x, y, game):
-        super().__init__()
+        self._layer = PLATFORM_LAYER
+        self.groups = game.all_sprites, game.platforms #So we don't need to add the sprite with these lines self.all_sprites.add(platform) self.platforms.add(platform) in new_game(self)
+        super().__init__(self.groups)
         self.game = game #access all the variables from the Game class
         self.image = self._choose_random_platform_image()
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self._spawn_a_powerup()
+        
 
     def _choose_random_platform_image(self):
         platform_image_list = [self.game.spritesheet.get_image(0, 288, 380, 94), self.game.spritesheet.get_image(213, 1662, 201, 100)]
         return choice(platform_image_list)
+
+    def _spawn_a_powerup(self):
+        if randrange(0, 100) < BOOST_POW_FREQUENCY_SPAWN_NUM:
+            Powerup(self, self.game)
+
+class Powerup(pygame.sprite.Sprite):
+    def __init__(self, platform, game):
+        self._layer = JUMP_BOOST_LAYER
+        self.groups = game.all_sprites, game.powerups
+        super().__init__(self.groups) #inherit the Parent class, which is pygame's sprite.Sprite class, and add self.groups
+        self.platform = platform
+        self.game = game
+        self.type = choice(["boost"])
+        self.image = self.game.spritesheet.get_image(820, 1805, 71, 70)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = self.platform.rect.centerx #Put the powerup in the center on the platform 
+        self.rect.bottom = self.platform.rect.top - 5
+
+    def update(self):
+        self.rect.bottom = self.platform.rect.top - 5 #Spawn the powerup on the platform
+        if not self.game.platforms.has(self.platform): #If the platform does not exist (if platform is deleted or killed)
+            self.kill() #Delete or kill the powerup
+
+class FlyingEnemy(pygame.sprite.Sprite):
+    def __init__(self, game):
+        self._layer = ENEMY_LAYER
+        self.groups = game.all_sprites, game.enemies
+        super().__init__(self.groups)
+        self.game = game
+        self.image_up = self.game.spritesheet.get_image(566, 510, 122, 139)
+        self.image_up.set_colorkey(BLACK)
+        self.image_down = self.game.spritesheet.get_image(568, 1534, 122, 135)
+        self.image_down.set_colorkey(BLACK)
+        self.image = self.image_up
+        self.rect = self.image.get_rect()
+        self.rect.centerx = choice([-100, WIDTH + 100])
+        self.velocity_x = randrange(1, 4) 
+        if self.rect.centerx > WIDTH: #If the Enemy spawned to the right 
+            self.velocity_x *= (-1) #reverse the x velocity
+        self.rect.y = randrange(HEIGHT / 2) #Spawn y location
+        self.velocity_y = 0
+        self.dy = 0.5
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def update(self):
+        self.rect.x += self.velocity_x
+        self.velocity_y += self.dy
+        if self.velocity_y > 3 or self.velocity_y < -3: #This if statement gives the enemy an interval to travel up and down
+            self.dy *= (-1) #change direction
+       
+        #Smooth up and down movement 
+        old_center = self.rect.center
+        if self.dy < 0: #moving upwards
+            self.image = self.image_up
+        else:
+            self.image = self.image_down
+        self.rect = self.image.get_rect() #get a new rect based on that image
+        self.rect.center = old_center
+        self.rect.y += self.velocity_y
+        if self.rect.left > WIDTH + 100 or self.rect.right < -100:
+            self.kill()
+
+
+
+
+
+
+    
 
 
  
