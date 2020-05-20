@@ -116,11 +116,12 @@ class Game():
         player_input = str(input("Input two numbers seperated with a comma (x,y): "))
         
         while player_input != QUIT:
-            if self.check_valid_input(player_input):
-                pass
-            else:
+            if not self.check_valid_input(player_input):
                 print("That is not a valid input!")
-                self.game_loop(the_board, the_player) #Recursion, The player can input an invalid input 999 times, over 999 causes a stack overflow
+                try:
+                    self.game_loop(the_board, the_player) #Recursion, The player can input an invalid input 999 times, over 999 causes a stack overflow
+                except ValueError:
+                    break
 
             x, y = player_input.split(",")
             new_board = the_board.switch(int(x), int(y), the_player)
