@@ -30,6 +30,7 @@ PLAYER_LAYER = 2
 PLATFORM_LAYER = 1
 JUMP_BOOST_LAYER = 1
 ENEMY_LAYER = 2
+CLOUD_LAYER = 0
 
 #Game properties
 BOOST_POWER_JUMP = 50
@@ -46,7 +47,7 @@ PLATFORM_COORDINATES_LIST = [
                             ]
 
 #colors
-BGCOLOR = (0, 204, 169)
+BGCOLOR = (51, 154, 169)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)

@@ -21,11 +21,25 @@ class Game():
         self.window = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Jumping Game")
         self.clock = pygame.time.Clock()
-        self.all_sprites = pygame.sprite.Group() #Group all the sprites
+        self.all_sprites = pygame.sprite.LayeredUpdates() #Spritegroup which we can specify what order the sprite (enemy) will be drawn by giving the sprite a layer
         self.platforms = pygame.sprite.Group() #Group all the platforms
         self.powerups = pygame.sprite.Group() #Group all the powerups
-        self.enemies = pygame.sprite.LayeredUpdates() #Spritegroup which we can specify what order the sprite (enemy) will be drawn by giving the sprite a layer
+        self.enemies = pygame.sprite.Group() 
+        self.clouds = pygame.sprite.Group() 
         
+    def _reset_init(self):
+        """It is a bad practice to reset the 
+        init function using self.__init__()"""
+
+        self.running = True
+        self.playing = True
+        self.score = 0
+        self.all_sprites = pygame.sprite.LayeredUpdates() #Group all the sprites
+        self.platforms = pygame.sprite.Group() #Group all the platforms
+        self.powerups = pygame.sprite.Group() #Group all the powerups
+        self.enemies = pygame.sprite.Group()
+        self.clouds = pygame.sprite.Group()
+
     def _load_data(self):
         """Load the high score -> os.path.join(another_folder_name/folder_name, file_name) is
          the same as dir = os.path.dirname(__file__) and os.path.join(dir, file_name)"""
@@ -38,13 +52,17 @@ class Game():
                 self.hightscore = 0
 
         #Load the spritesheet
-        self.spritesheet = Spritesheet(os.path.join(self.__dirname + "/spritesheets", "spritesheet_jumper.png")) #/spritesheets on macOS \spritesheets on window 
+        self.spritesheet = Spritesheet(os.path.join(self.__dirname + "/spritesheet_images", "spritesheet_jumper.png")) #/spritesheets_images on macOS \spritesheets_images on window 
 
         #load the sounds
         self.sound_dir = os.path.join(self.__dirname, "sounds")
         self.jump_sound = pygame.mixer.Sound(os.path.join(self.sound_dir, JUMP_SOUND))
         self.jump_boost_sound = pygame.mixer.Sound(os.path.join(self.sound_dir, JUMP_BOOST_SOUND))
-        
+
+        #Load the cloud images
+        self.cloud_images = []
+        for i in range(1,4):
+            self.cloud_images.append(pygame.image.load(os.path.join(self.__dirname + "/spritesheet_images", "cloud{}.png".format(i))).convert()) #3:44       
 
     def _draw_text(self, x, y, text, font_size, color):
         font = pygame.font.Font(self.font, font_size)
@@ -70,37 +88,21 @@ class Game():
                     waiting = False
                     self.running = False
 
-    def _reset_init(self):
-        """This is a bad practice to reset the 
-        init function using self.__init__()"""
+    def _events(self):
+        #Event handlers
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.playing = False
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    self.player.jump()
+                if event.key == pygame.K_ESCAPE:
+                    quit()
+            if event.type == pygame.KEYUP:
+                self.player.cut_jump()
 
-        self.running = True
-        self.playing = True
-        self.score = 0
-        self.all_sprites = pygame.sprite.Group() #Group all the sprites
-        self.platforms = pygame.sprite.Group() #Group all the platforms
-        self.powerups = pygame.sprite.Group() #Group all the powerups
-        self.enemies = pygame.sprite.Group() #Group all the enemies
-
-    def new_game(self):
-        self.player = Player(self) #pass the Game object into the Player object
-        for plat in PLATFORM_COORDINATES_LIST:
-            Platform(*plat, self) #*plat instead of typing plat[0],plat[1], self is the Game object
-            
-        pygame.mixer.music.load(os.path.join(self.sound_dir, BACKGROUND_MUSIC))
-    
-    def run(self):
-        """This is the game loop"""
-
-        pygame.mixer.music.play(loops=-1)
-        while self.playing:
-            self.clock.tick(FPS)
-            self.events()
-            self.update()
-            self.draw()
-        pygame.mixer.music.fadeout(500) #fade out the music in the span of a half second
-
-    def update(self):
+    def _update(self):
         """Game loop - update"""
         self.all_sprites.update() #update function from sprites.py
         hits = pygame.sprite.spritecollide(self.player, self.platforms, False) #spritecollide(single_object, group_object, dokill) dokill is deleting the object from the spritegroup
@@ -116,7 +118,6 @@ class Game():
         if enemy_hits:
             self.playing = False 
 
-
         if self.player.velocity.y > 0: #if player is going down due to gravity -number: y is going up, +number: y is going down
             if hits:
                 lowest_platform = hits[0]
@@ -131,9 +132,19 @@ class Game():
                         self.player.jumping = False
 
         #If player reaches the 1/4th of the screen then scroll every object animation
-        if self.player.rect.top <= HEIGHT / 4:
+        if self.player.rect.top <= HEIGHT / 4: 
+            #Spawn clouds 
+            if random.randrange(0, 100) < 5:
+                Cloud(self)
+
+            #move the clouds
+            for cloud in self.clouds:
+                cloud.rect.y += max(abs(self.player.velocity.y / 3), 2)
+
             #smooth moving animation for the platforms with respect to the player's velocity 
             self.player.pos.y += max(abs(self.player.velocity.y), 2) 
+
+            #move the platforms
             for plat in self.platforms:
                 plat.rect.y += max(abs(self.player.velocity.y), 2)
                 #if the platform goes off the screen remove it or kill it :)
@@ -166,27 +177,35 @@ class Game():
         while len(self.platforms) < 6:
             width = random.randrange(50, 100)
             Platform(random.randrange(0, WIDTH - width), random.randrange(-75, -30), self)
-
-    def events(self):
-        #Event handlers
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.playing = False
-                self.running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    self.player.jump()
-                if event.key == pygame.K_ESCAPE:
-                    quit()
-            if event.type == pygame.KEYUP:
-                self.player.cut_jump()
                  
-    def draw(self):
+    def _draw(self):
         self.window.fill(BGCOLOR)
         self.all_sprites.draw(self.window)
         self._draw_text(WIDTH / 2, 15, str(self.score), 25, WHITE)
         pygame.display.flip()
 
+    def new_game(self):
+        self.player = Player(self) #pass the Game object into the Player object
+
+        for plat in PLATFORM_COORDINATES_LIST:
+            Platform(*plat, self) #*plat instead of typing plat[0],plat[1], self is the Game object
+            
+        pygame.mixer.music.load(os.path.join(self.sound_dir, BACKGROUND_MUSIC))
+        for _ in range(6):
+            c = Cloud(self)
+            c.rect.y += 500
+    
+    def run(self):
+        """This is the game loop"""
+
+        pygame.mixer.music.play(loops=-1)
+        while self.playing:
+            self.clock.tick(FPS)
+            self._events()
+            self._update()
+            self._draw()
+        
+        pygame.mixer.music.fadeout(500) #fade out the music in the span of a half second
 
     def show_start_screen(self):
         pygame.mixer.music.load(os.path.join(self.sound_dir, TITLE_MUSIC))
@@ -233,4 +252,3 @@ def main():
         jump_game.show_game_over_screen()
 
 main()
-

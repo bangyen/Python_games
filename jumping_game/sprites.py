@@ -41,6 +41,7 @@ class Player(pygame.sprite.Sprite):
         self.acceleration = vector(0, 0) #Player acceleration vector
         self.mask = pygame.mask.from_surface(self.image) #for pixel perfect collision
 
+
     def _load_images(self):
         self.standing_frames = [self.game.spritesheet.get_image(614, 1063, 120, 191), self.game.spritesheet.get_image(690, 406, 120, 201)]
         self.right_walking_frames = [self.game.spritesheet.get_image(678, 860, 120, 201), self.game.spritesheet.get_image(692, 1458, 120, 207)]
@@ -182,7 +183,7 @@ class FlyingEnemy(pygame.sprite.Sprite):
         self.velocity_x = randrange(1, 4) 
         if self.rect.centerx > WIDTH: #If the Enemy spawned to the right 
             self.velocity_x *= (-1) #reverse the x velocity
-        self.rect.y = randrange(HEIGHT / 2) #Spawn y location
+        self.rect.y = randrange(0, HEIGHT / 2) #Spawn y location
         self.velocity_y = 0
         self.dy = 0.5
         self.mask = pygame.mask.from_surface(self.image)
@@ -204,6 +205,27 @@ class FlyingEnemy(pygame.sprite.Sprite):
         self.rect.y += self.velocity_y
         if self.rect.left > WIDTH + 100 or self.rect.right < -100:
             self.kill()
+
+class Cloud(pygame.sprite.Sprite):
+    def __init__(self, game):
+        self.layer = CLOUD_LAYER
+        self.groups = game.all_sprites, game.clouds
+        super().__init__(self.groups)
+        self.game = game
+        self.image = choice(game.cloud_images)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        scale = (randrange(50, 101) / 100)
+        self.image = pygame.transform.scale(self.image, (int(scale * self.rect.width), int(scale * self.rect.height)))
+        self.rect.x = randrange(0, WIDTH - self.rect.width)
+        self.rect.y = randrange(-500, -50)
+   
+
+    def update(self):
+        if self.rect.top > HEIGHT * 2:
+            self.kill()
+
+
 
 
 
