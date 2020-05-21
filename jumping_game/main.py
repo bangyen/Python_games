@@ -1,5 +1,5 @@
 """Jumping Game: run this game where the root folder is Python_games, otherwise it wont run"""
-"""This code is improvised from a pygame tutorial jumpy from the youtube channel KidsCanCode"""
+"""This code was improvised from a pygame tutorial jumpy from the youtube channel KidsCanCode"""
 """The background, the game over and the title music is from the Super Mario World"""
 """The wav sound files are from https://www.bfxr.net/"""
 

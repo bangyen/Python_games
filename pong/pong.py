@@ -1,3 +1,6 @@
+"""The classic retro game pong"""
+"""Author: Kristofer Gauti"""
+
 import random 
 import time
 import os

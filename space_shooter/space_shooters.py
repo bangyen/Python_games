@@ -1,3 +1,6 @@
+"""This code was improvised from a pygame tutorial Space Shooters from the Youtube channel Tech with Tim"""
+"""The additional fetures are a cheat menu and a heart system to increment the space ship's lives"""
+
 import pygame
 import os
 import time

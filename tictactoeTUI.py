@@ -1,3 +1,6 @@
+"""The classic Tic Tac Toe game"""
+"""Author: Kristofer"""
+
 EMPTY = " "
 QUIT = "q"
 
@@ -114,35 +117,31 @@ class Game():
 
     def game_loop(self, the_board, the_player):
         player_input = str(input("Input two numbers seperated with a comma (x,y): "))
-        
         while player_input != QUIT:
-            if not self.check_valid_input(player_input):
-                print("That is not a valid input!")
-                try:
-                    self.game_loop(the_board, the_player) #Recursion, The player can input an invalid input 999 times, over 999 causes a stack overflow
-                except ValueError:
+            try:
+                x, y = player_input.split(",")
+                new_board = the_board.switch(int(x), int(y), the_player)
+                print(the_board)
+            
+                winner = self.check_win(the_board)
+                if winner:
+                    if len(winner) > 1:
+                        print(winner) 
+                    else:  
+                        print("The winner is {}".format(self.turn))
                     break
 
-            x, y = player_input.split(",")
-            new_board = the_board.switch(int(x), int(y), the_player)
-            print(the_board)
-        
-            winner = self.check_win(the_board)
-            if winner:
-                if len(winner) > 1:
-                    print(winner) 
-                else:  
-                    print("The winner is {}".format(self.turn))
-                break
+                if new_board == 0: #zero means that the spot was out of range
+                    print("The spot that you have chosen is out of range")
+                elif new_board == 1: #one means that the spot was occupied
+                    print("This spot is taken!")
+                else:
+                    the_player = self.switch_turn() #if new board returns none (no integer values), switch the player
 
-            if new_board == 0: #zero means that the spot was out of range
-                print("The spot that you have chosen is out of range")
-            elif new_board == 1: #one means that the spot was occupied
-                print("This spot is taken!")
-            else:
-                the_player = self.switch_turn() #if new board returns none (no integer values), switch the player
-        
-            player_input = str(input("Input two numbers seperated with a comma (x,y): "))
+                player_input = str(input("Input two numbers seperated with a comma (x,y): "))
+                
+            except ValueError:
+                player_input = str(input("Input two numbers seperated with a comma (x,y): "))
 
     def start(self):
         players_turn = self.whose_turn()
