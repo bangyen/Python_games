@@ -9,15 +9,21 @@ import os
 from random import randrange
 from hash_table import *
 
-RANDOMWORDLIST = "wordlist.txt"
+RANDOM_WORDLIST = "wordlist.txt"
+ACADEMIC_WORD_LIST = "academic_word_list.txt"
 DASHES = "_"
 
 class DashLines():
-    def __init__(self, filename):
+    def __init__(self, filename, academic=False):
         self.__dirname = os.path.dirname(__file__)
         self.file = open(os.path.join(self.__dirname, filename), "r")
         self.word_to_guess = self._choose_word()
-        self.dashes = [DASHES for x in range(len(self.word_to_guess))]
+        if academic:
+            list_with_defination = self.word_to_guess.split(":")
+            self.word_dictionary = {list_with_defination[0]: list_with_defination[1].strip()}
+            self.dashes = [DASHES for x in range(len(list_with_defination[0]))]
+        else:
+            self.dashes = [DASHES for x in range(len(self.word_to_guess))]
         
     def __str__(self):
         string = ""
@@ -37,12 +43,12 @@ class DashLines():
         return str(self.word)
 
 class Game():
-    def __init__(self):
+    def __init__(self, academic=False):
         self.starting_appending = False
         self.lives = 8
-        self.board = DashLines(RANDOMWORDLIST)
+        self.board = DashLines(RANDOM_WORDLIST) if not academic else DashLines(ACADEMIC_WORD_LIST, True)
         self.list_with_dashes = self.board.dashes
-        self.word = self.board.word_to_guess
+        self.word = self.board.word_to_guess if not academic else self.get_key()
         self.guessed_letters = []
         self._load_hangman_ascii()
 
@@ -105,7 +111,7 @@ class Game():
         return 3
 
 
-    def regular_start(self):
+    def regular_start(self, academic=False):
         print("\nWelcome to Hangman")
         print("Input any number to quit the game\n")
         print(self.board)
@@ -134,6 +140,10 @@ class Game():
 
                 if self._check_win() == 1:
                     print("Congratulations! You guessed the right word.")
+                    if academic:
+                        print("The definition of {} is: {}".format(self.get_key(), self.get_value()))
+                    break
+
                 elif self._check_win() == 2:
                     print("Oh, better luck next time!")
                     print("The correct word was: {}".format(self.word))
@@ -141,11 +151,22 @@ class Game():
                 
                 player_input = str(input("Guess a letter "))
 
+    def get_key(self):
+        for k, v in self.board.word_dictionary.items():
+            return k
+
+    def get_value(self):
+        for value in self.board.word_dictionary.values():
+            return value
+
     def academic_start(self):
-        print("Implement later :)")
+        #self.word = self.board.word_to_guess
+        print(self.board.word_dictionary)
+        #print(self.word)
+        self.word = self.get_key()
+        self.regular_start(True)
 
 def main():
-    hangman = Game()
     print("Hangman")
     for i in range(1,3):
         if i == 1: 
@@ -165,9 +186,11 @@ def main():
             invalid_input = True
 
         if answer == 1:
+            hangman = Game()
             hangman.regular_start()
             invalid_input = False
         elif answer == 2:
+            hangman = Game(True)
             hangman.academic_start()
             invalid_input = False
         else:
