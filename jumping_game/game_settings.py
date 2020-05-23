@@ -6,13 +6,13 @@ HIGHSCORE_FILE = "highscore.txt"
 WIDTH, HEIGHT = 480, 600
 FPS = 60
 FONT_NAME = "arial"
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
 #pygame intit and display functions
 pygame.font.init()
 pygame.mixer.init()
 pygame.display.set_caption("Jump Game")
 clock = pygame.time.Clock()
+pygame.display.set_mode((WIDTH, HEIGHT))
 
 #Sound
 TITLE_MUSIC = "Titlemusic_supermario.ogg"
