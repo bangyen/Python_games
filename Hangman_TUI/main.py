@@ -147,6 +147,8 @@ class Game():
                 elif self._check_win() == 2:
                     print("Oh, better luck next time!")
                     print("The correct word was: {}".format(self.word))
+                    if academic:
+                        print("The definition of {} is: {}".format(self.get_key(), self.get_value()))
                     break
                 
                 player_input = str(input("Guess a letter "))
@@ -198,5 +200,3 @@ def main():
             invalid_input = True
         
 main()
-
-

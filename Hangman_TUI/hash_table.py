@@ -22,7 +22,7 @@ class Hashmap():
                 string += str(letter.data)
 
         return string
-
+        
     def find(self, key):
         i = hash(key) % self.array_length
         for item in self.hash_table[i]:
