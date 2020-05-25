@@ -17,10 +17,10 @@ class Game():
         self.running = True
         self.playing = True
         self.score = 0
+        self.sprite_dir = os.path.join(self.dirname, "sprite_img")
         self.font = pygame.font.match_font(FONT_NAME) 
         self.all_sprites = pygame.sprite.LayeredUpdates() #Group all the sprites with layers for blitting on the screen
         self.pipes = pygame.sprite.Group() #Group all the pipes
-        self.sprite_dir = os.path.join(self.dirname, "sprite_img")
 
     def _load_data(self):
         """Load the high score -> os.path.join(another_folder_name/folder_name, file_name) is
@@ -48,10 +48,7 @@ class Game():
         self.playing = True
         self.score = 0
         self.all_sprites = pygame.sprite.LayeredUpdates() #Group all the sprites
-        self.platforms = pygame.sprite.Group() #Group all the platforms
-        self.powerups = pygame.sprite.Group() #Group all the powerups
-        self.enemies = pygame.sprite.Group()
-        self.clouds = pygame.sprite.Group()
+        self.pipes = pygame.sprite.Group() #Group all the platforms
 
     def _wait_for_key_pressed(self):
         waiting = True
@@ -75,6 +72,12 @@ class Game():
         self.bird = Bird(self)
         self.grass = Grass(self)
 
+
+        for pipe_upward_coordinate in PIPE_UPWARD_COORDINATES:
+            Pipe(pipe_upward_coordinate[0], pipe_upward_coordinate[1], self, True)
+        for pipe_downward_coordinate in PIPE_DOWNWARD_COORDINATES:
+            Pipe(pipe_downward_coordinate[0], pipe_downward_coordinate[1], self)
+
     def run(self):
         """Game loop"""
         
@@ -95,16 +98,49 @@ class Game():
                 if event.key == pygame.K_ESCAPE:
                     quit()
 
+    def _check_hit_from_pipes(self):
+        hits = pygame.sprite.spritecollide(self.bird, self.pipes, False, pygame.sprite.collide_mask)
+        if hits:
+            print("U ded")
+        else:
+            for pipe in self.pipes:
+                if int(self.bird.pos.x) == int(pipe.rect.x) or int(self.bird.rect.x) == int(pipe.rect.x):
+                    print("collision detection started")
+                    self.score += 0.5
+            
+
     def _update(self):
         self.all_sprites.update()
+      
+                    
+        #Move the pipes 
+        for pipe in self.pipes:
+            pipe.rect.x -= PIPE_MOVING_VELOCITY
+            if pipe.rect.left < 0:
+                pipe.kill()
 
+        #print(self.pipes)
 
+        while len(self.pipes) < 6:
+            x_space_between = WIDTH + SPACE_BETWEEN_PIPES
+            new_coordinates_list = [ #fix the gap between pipe 3
+                                    (x_space_between, SKY_CONSTANT, x_space_between, GROUND_CONSTANT + 230), #3,5cm op
+                                    (x_space_between, SKY_CONSTANT - 240, x_space_between, GROUND_CONSTANT), #3,5cm op
+                                    (x_space_between, SKY_CONSTANT - 130, x_space_between, GROUND_CONSTANT + 100), 
+                                    (x_space_between, SKY_CONSTANT - 50, x_space_between, GROUND_CONSTANT + 190),
+                                    (x_space_between, SKY_CONSTANT, x_space_between, GROUND_CONSTANT + 240)
+                                   ]
+            spawn_new_coordinates = random.choice(new_coordinates_list)
+            Pipe(spawn_new_coordinates[0], spawn_new_coordinates[1], self, True)
+            Pipe(spawn_new_coordinates[2], spawn_new_coordinates[3], self )
+
+        self._check_hit_from_pipes()
 
     def _draw(self):
         #self.window.fill(BGCOLOR)
         self.window.blit(self.background, (0,0))
         self.all_sprites.draw(self.window)
-        self._draw_text(WIDTH / 2, 15, str(self.score), 70, WHITE)
+        self._draw_text(WIDTH / 2, 15, str(int(self.score)), 70, WHITE)
         pygame.display.flip() 
 
    
@@ -127,6 +163,5 @@ def main():
         flappy.new_game()
         flappy.run()
         flappy.show_game_over_screen()
-
-
+ 
 main()

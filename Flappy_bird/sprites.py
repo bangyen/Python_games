@@ -8,7 +8,7 @@ vector = pygame.math.Vector2
 
 class Grass(pygame.sprite.Sprite):
     def __init__(self, game):
-        self._layer = 1
+        self._layer = GRASS_LAYER
         self.groups = game.all_sprites
         super().__init__(self.groups)
         self.game = game
@@ -18,25 +18,30 @@ class Grass(pygame.sprite.Sprite):
         self.rect.x = 0
         self.rect.y = HEIGHT - 100
 
+    def get_height(self):
+        return self.image.get_height()
+
 class Bird(pygame.sprite.Sprite):
     def __init__(self, game):
         self._layer = BIRD_LAYER
         self.groups = game.all_sprites
         super().__init__(self.groups)
         self.game = game
-        self.flapping = False
         self.current_frame = 0
         self.last_update_time = 0 #What time we did the last change, set up the animation speed (framerate)
         self._load_images_and_blit()
         self.image = self.bird_sprites[0] #self.image is required in the sprite class
+        self.rotation_45 = [pygame.transform.rotate(image, 315) for image in self.bird_sprites]
+        self.rotation_90 = [pygame.transform.rotate(image, 270) for image in self.bird_sprites]
+        self.flying_imgs = [pygame.transform.rotate(image, 45) for image in self.bird_sprites]
         self.rect = self.image.get_rect() #self.rect is required in the sprite class and this puts a rectangle over the image
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
-        self.pos = vector(WIDTH / 2, HEIGHT / 2) #Vector where the position of the player is
+        self.pos = vector(WIDTH / 2 - 150, HEIGHT / 2) #Vector where the position of the player is
         self.velocity = vector(0, 0) #Player's velocity vector
-        self.acceleration = vector(BIRD_ACCELERATION, 0) #Player acceleration vector
+        self.acceleration = vector(0, 0) #Player acceleration vector
         self.mask = pygame.mask.from_surface(self.image) #for pixel perfect collision
 
-
+    
     def _get_img(self, x, y, sprite, width, height):
         """This function is blits the image and gets its rect"""
 
@@ -53,36 +58,82 @@ class Bird(pygame.sprite.Sprite):
         for bird in self.bird_sprites:
             bird.set_colorkey(BLACK)
 
-    
+    def __change_frames(self, frames, img_list):
+        self.current_frame = (self.current_frame + 1) % len(frames)
+        last_image_bottom = self.rect.bottom 
+        self.image = img_list[self.current_frame]
+        self.rect = self.image.get_rect()
+        self.rect.bottom = last_image_bottom
+
     def _animate(self):
         time_now = pygame.time.get_ticks()
     
-        if time_now - self.last_update_time > 170:
+        if time_now - self.last_update_time > 170: #Do this after 170 ms interval
             self.last_update_time = time_now
-            self.current_frame = (self.current_frame + 1) % len(self.frames)
-            last_image_bottom = self.rect.bottom 
-            self.image = self.bird_sprites[self.current_frame]
-            self.rect = self.image.get_rect()
-            self.rect.bottom = last_image_bottom
-       
-
+            if self.velocity.y < 0:
+                self.__change_frames(self.frames, self.flying_imgs) #45 degrees counter clockwise
+            elif 0 <= self.velocity.y < 4:
+                self.__change_frames(self.frames, self.bird_sprites) #0 degrees regular flying bird
+            elif 4 <= self.velocity.y < 8:
+                self.__change_frames(self.frames, self.rotation_45) #45 degrees clockwise
+            else:
+                self.__change_frames(self.frames, self.rotation_90) #90 degrees clockwise
+            
     def update(self):
         """This function executes when it is called sprite_obj.update"""
         self._animate()
         self.acceleration = vector(0, BIRD_GRAVITY)
 
-        #move the bird foward at a constant speed
-        self.acceleration.x += self.velocity.x * BIRD_AIR_RESISTANCE
         self.velocity += self.acceleration
 
         #Motion physic equations
-        self.pos += self.velocity + (0.5 * self.acceleration) #looks like s = v0 * t + 1/2 at^2 lineal motion
+        self.pos += self.velocity + (0.5 * self.acceleration)   #looks like s = v0 * t + 1/2 at^2 lineal motion
 
         self.rect.midbottom = self.pos #player's rectangle middlepoint is our (x,y) 
+        # print("\nVelocity: ",self.velocity)
+        # print()
+        # print("Acceleration: ",self.acceleration)
+        # print()
+        # print("Position: ", self.pos)
 
+        #Boundaries
+        if self.pos.y < 0 - self.rect.height / 2:
+            self.pos.y = 40
+        elif self.pos.y > HEIGHT - 100 + self.rect.height / 2:
+            print("Game over boii")
+            
 
     def fly_up(self):
         self.velocity.y = BIRD_FLY_UP
+
+class Pipe(pygame.sprite.Sprite):
+    def __init__(self, x, y, game, downwardspipe=False):
+        self._layer = PIPE_LAYER
+        self.groups = game.all_sprites, game.pipes
+        super().__init__(self.groups)
+        self.game = game
+        self._load_pipe()
+        self.pipe_list = [self.pipe_sprite, pygame.transform.rotate(self.pipe_sprite, 180)] #2 pipesprites 
+        self.image = self.pipe_list[0] if not downwardspipe else self.pipe_list[1]
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def _get_img(self, x, y, sprite, width, height):
+        """This function is blits the image and gets its rect"""
+
+        image = pygame.Surface((width, height))
+        image.blit(sprite, (0, 0))
+        image.set_colorkey(BLACK)
+        #image = pygame.transform.scale(image, (width * 2 , height * 2)) #scale the image by 1/2
+        return image
+
+    def _load_pipe(self):
+        self.pipe_img = pygame.image.load(os.path.join(self.game.sprite_dir, "pipe_green.png"))
+        self.pipe_sprite = self._get_img(0, 0, self.pipe_img, self.pipe_img.get_width(), self.pipe_img.get_height())
+
+
             
             
 
