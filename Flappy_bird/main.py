@@ -2,6 +2,7 @@
 """Author Kristofer Gauti"""
 """The sprites are from this git repo: https://github.com/sourabhv/FlapPyBird/tree/master/assets/sprites"""
 """The game over square is from Kenney: https://kenney.nl/assets/tappy-plane"""
+"""The flappy bird sounds were downloaded from the website https://www.sounds-resource.com/mobile/flappybird/sound/5309/"""
 
 import pygame
 import os
