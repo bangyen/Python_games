@@ -31,15 +31,15 @@ class Bird(pygame.sprite.Sprite):
         self.current_frame = 0
         self.last_update_time = 0 #What time we did the last change, set up the animation speed (framerate)
         self.dead = False
-        self.gravity = 0.8
+        self.gravity = BIRD_START_GRAVITY
         self._load_images_and_blit()
         self.image = self.bird_sprites[0] #self.image is required in the sprite class
-        self.rotation_45 = [pygame.transform.rotate(image, 315) for image in self.bird_sprites]
+        self.rotation_45 = [pygame.transform.rotate(image, 15) for image in self.bird_sprites]
         self.rotation_90 = [pygame.transform.rotate(image, 270) for image in self.bird_sprites]
         self.flying_imgs = [pygame.transform.rotate(image, 45) for image in self.bird_sprites]
         self.rect = self.image.get_rect() #self.rect is required in the sprite class and this puts a rectangle over the image
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
-        self.pos = vector(WIDTH / 2 - 150, HEIGHT / 2) #Vector where the position of the player is
+        self.pos = vector(BIRD_START_POS_X, BIRD_START_POS_Y) #Vector where the position of the player is
         self.velocity = vector(0, 0) #Player's velocity vector
         self.acceleration = vector(0, 0) #Player acceleration vector
         self.mask = pygame.mask.from_surface(self.image) #for pixel perfect collision
@@ -68,7 +68,7 @@ class Bird(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.bottom = last_image_bottom
 
-    def animate(self):
+    def _animate(self):
         time_now = pygame.time.get_ticks()
     
         if time_now - self.last_update_time > 170: #Do this after 170 ms interval
@@ -83,7 +83,7 @@ class Bird(pygame.sprite.Sprite):
                 self.__change_frames(self.frames, self.rotation_90) #90 degrees clockwise
 
     def _calculate_flying_distance(self):
-        self.animate()
+        self._animate()
         self.acceleration = vector(0, self.gravity)
 
         self.velocity += self.acceleration
@@ -110,6 +110,11 @@ class Bird(pygame.sprite.Sprite):
             if self.dead:
                 self.pos.y = HEIGHT - 100 + self.rect.height / 2 - 15
                 self.image = self.rotation_90[0]
+                
+                if not self.game.hitpipe:
+                    if self.game.play_hit_ground_sound:
+                        self.game.sound_hit.play()
+                        self.game.play_hit_ground_sound = False
             else:
                 self.dead = True
                 self.grass._layer = 1
