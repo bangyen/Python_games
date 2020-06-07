@@ -13,9 +13,11 @@ WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("The Classic Pong Game")
 
 #load pixel images
-orange_pixel_plank = pygame.image.load(os.path.join("pong/assets", "blue_pixel_plank.png"))
-blue_pixel_plank = pygame.image.load(os.path.join("pong/assets", "orange_pixel_plank.png"))
-red_pixel_pong_ball = pygame.image.load(os.path.join("pong/assets", "red_pixel_pong_ball.png"))
+dirname = os.path.dirname(__file__)
+assets = os.path.join(dirname, "assets")
+orange_pixel_plank = pygame.image.load(os.path.join(assets, "blue_pixel_plank.png"))
+blue_pixel_plank = pygame.image.load(os.path.join(assets, "orange_pixel_plank.png"))
+red_pixel_pong_ball = pygame.image.load(os.path.join(assets, "red_pixel_pong_ball.png"))
 
 
 class Plank():
