@@ -15,6 +15,7 @@ class Game():
         self.__dirname = os.path.dirname(__file__)
         self.__spritesheet_dir = os.path.join(self.__dirname, "spritesheet")
         self.all_sprites = pygame.sprite.LayeredUpdates()
+        self.platforms = pygame.sprite.Group()
 
 
         self._load_data()
@@ -41,15 +42,24 @@ class Game():
                     self.playing = False
                     self.running = False
                 if event.key == pygame.K_SPACE:
-                    pass
+                    self.main_player.jump()
             if event.type == pygame.KEYUP:
                 #Main character short jump
                 pass
                 
-            
 
     def _update(self):
         self.all_sprites.update()
+        hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
+
+        if self.main_player.velocity.y > 0: #going down due to gravity
+            if hits_platform:
+                self.main_player.position.y = hits_platform[0].rect.top
+                self.main_player.velocity.y = 0 # stop the main character
+                self.main_player.jumping = False
+
+
+
 
     def _draw(self):
         WIN.fill(SKYBLUE)
@@ -59,6 +69,9 @@ class Game():
 
     def new_game(self):
         self.main_player = MainCharacter(self)
+
+        #Initial platform for the main character
+        Platform(self.main_player.position.x - 20, self.main_player.position.y + 2, self)
 
     def run(self):
         """Game loop"""

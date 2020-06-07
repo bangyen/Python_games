@@ -15,11 +15,13 @@ pygame.display.set_caption("Adventurous Joe")
 
 #Layers
 MAIN_CHAARACTER_LAYER = 2
+PLATFORM_LAYER = 1
 
 #Main character's properties
 GRAVITY = 0.8
 ACCELERATION = 0.4
 FRICTION = -0.07
+PLAYER_JUMP = -17
 
 #Colors
 BLACK = (0, 0, 0)
