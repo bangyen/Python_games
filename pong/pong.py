@@ -98,6 +98,7 @@ def collide(obj1, obj2):
     return obj1.mask.overlap(obj2.mask, (int(offset_x), int(offset_y))) != None # (x,y)
 
 
+
 def main():
     run = True
     FPS = 60
