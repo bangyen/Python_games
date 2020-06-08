@@ -54,9 +54,9 @@
 {"spritename":"run4.png","x":118,"y":448,"height":33,"width":21},
 {"spritename":"run5.png","x":139,"y":448,"height":33,"width":21},
 {"spritename":"run6.png","x":160,"y":448,"height":33,"width":21},
-{"spritename":"lava1.png","x":181,"y":448,"height":32,"width":32}, #_0001_Layer-2.png
-{"spritename":"lava2.png","x":213,"y":448,"height":32,"width":32}, #_0000_Layer-1.png
-{"spritename":"lava3.png","x":245,"y":448,"height":32,"width":32}, #_0002_Layer-3.png
+{"spritename":"lava1.png","x":181,"y":448,"height":32,"width":32}, 
+{"spritename":"lava2.png","x":213,"y":448,"height":32,"width":32}, 
+{"spritename":"lava3.png","x":245,"y":448,"height":32,"width":32}, 
 {"spritename":"fly02.png","x":277,"y":448,"height":32,"width":32},
 {"spritename":"fly03.png","x":309,"y":448,"height":32,"width":32},
 {"spritename":"fly04.png","x":341,"y":448,"height":32,"width":32},

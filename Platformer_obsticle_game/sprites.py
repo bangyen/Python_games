@@ -1,5 +1,6 @@
 import pygame
 import random
+import os
 from game_settings import *
 
 vector = pygame.math.Vector2
@@ -12,7 +13,7 @@ class SpritesheetParser():
         image = pygame.Surface((width, height))
         image.blit(self.spritesheet, (0, 0), (x, y, width, height))
         if scale_up:
-            image = pygame.transform.scale(image, (width * scale_num, height * scale_num))
+            image = pygame.transform.scale(image, (int(width * scale_num), int(height * scale_num)))
         else:
             image = pygame.transform.scale(image, (width // scale_num, height // scale_num))
 
@@ -33,7 +34,7 @@ class MainCharacter(pygame.sprite.Sprite):
         self.image = self.standing_frames_right[0]
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2) #maybe uneccecary
-        self.position = vector(100, HEIGHT - 50)
+        self.position = vector(40, HEIGHT - 50)
         self.velocity = vector(0, 0)
         self.acceleration = vector(0, 0)
         self.mask = pygame.mask.from_surface(self.image)
@@ -103,7 +104,7 @@ class MainCharacter(pygame.sprite.Sprite):
 
     def update(self):
         self._animate()
-        print(self.velocity.x, self.velocity.y)
+        # print(self.velocity.x, self.velocity.y)
 
         self.acceleration = vector(0, GRAVITY)
 
@@ -135,17 +136,76 @@ class MainCharacter(pygame.sprite.Sprite):
     def cut_jump(self):
         pass
 
+    def get_height(self):
+        return self.image.get_height()
+
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, game):
+    def __init__(self, x, y, game, grass=True):
         self._layer = PLATFORM_LAYER
         self.groups = game.all_sprites, game.platforms
         super().__init__(self.groups)
         self.game = game
-        self.image = self.game.main_sprite_sheet.get_image(128, 0, 128, 128, 3, False)
+        if grass:
+            self.image = self.game.main_sprite_sheet.get_image(128, 0, 128, 128, 3, False)
+        else:
+            self.image = self.game.main_sprite_sheet.get_image(0, 0, 128, 128, 3, False)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
+    def get_width(self):
+        return self.image.get_width()
+
+class Lava(pygame.sprite.Sprite):
+    def __init__(self, x, y, game):
+        self._layer = PLATFORM_LAYER
+        self.groups = game.all_sprites, game.lavas
+        super().__init__(self.groups)
+        self.game = game
+        self._load_images()
+        self.last_update_time = 0
+        self.current_frame_index = 0
+        self.image = self.lava_bubbles_images[0]
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def _load_images(self):
+        self.lava_bubbles_images = [self.game.main_sprite_sheet.get_image(181, 448, 32, 32, 1.5),
+                                    self.game.main_sprite_sheet.get_image(213, 448, 32, 32, 1.5),
+                                    self.game.main_sprite_sheet.get_image(245, 448, 32, 32, 1.5)]
+
+        for lava_frame in self.lava_bubbles_images:
+            lava_frame.set_colorkey(BLACK)
+
+    def _animate(self):
+        time_now = pygame.time.get_ticks()
+
+        if time_now - self.last_update_time > 100:
+            self.last_update_time = time_now
+            self.current_frame_index = (self.current_frame_index + 1) % len(self.lava_bubbles_images)
+            self.image = self.lava_bubbles_images[self.current_frame_index]
+
+    def update(self):
+        self._animate()
+
+class GraveStone(pygame.sprite.Sprite):
+    def __init__(self, x, y, game):
+        self._layer = MAIN_CHAARACTER_LAYER
+        self.groups = game.all_sprites
+        super().__init__(self.groups)
+        self.game = game
+        self.image = pygame.image.load(os.path.join(game.spritesheet_dir, "rip_joe.png")).convert()
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+
+
 
 
 
