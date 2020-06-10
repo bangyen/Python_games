@@ -154,8 +154,11 @@ class Platform(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
-    def get_width(self):
-        return self.image.get_width()
+    def get_size(self, width=True, height=False):
+        if width:
+            return self.image.get_width()
+        if height:
+            return self.image.get_height()
 
 class Lava(pygame.sprite.Sprite):
     def __init__(self, x, y, game):
@@ -184,7 +187,7 @@ class Lava(pygame.sprite.Sprite):
     def _animate(self):
         time_now = pygame.time.get_ticks()
 
-        if time_now - self.last_update_time > 100:
+        if time_now - self.last_update_time > 250:
             self.last_update_time = time_now
             self.current_frame_index = (self.current_frame_index + 1) % len(self.lava_bubbles_images)
             self.image = self.lava_bubbles_images[self.current_frame_index]
@@ -198,11 +201,65 @@ class GraveStone(pygame.sprite.Sprite):
         self.groups = game.all_sprites
         super().__init__(self.groups)
         self.game = game
-        self.image = pygame.image.load(os.path.join(game.spritesheet_dir, "rip_joe.png")).convert()
+        self.image = game.traps_sprite_sheet.get_image(388, 3458, 100, 100, 2)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        
+class SingleFrameSpriteTrap(pygame.sprite.Sprite):
+    def __init__(self, x, y, starting_pos, game, animation=True, spike=True, stone=False, axe=False):
+        self._layer = TRAP_LAYER
+        self.groups = game.all_sprites, game.spikes
+        super().__init__(self.groups)
+        self.last_update_time = 0
+        self.game = game
+        self.animation = animation
+        self.spike = spike
+        self.stone = stone
+        self.axe = axe
+        if self.spike:
+            self.spike_go_up = True
+            self.spike_go_down = False 
+            self.image = game.traps_sprite_sheet.get_image(260, 1486, 160, 164, 4, False)
+        if self.stone:
+            self.image = game.traps_sprite_sheet.get_image(0, 0, 394, 394, 1)
+        if self.axe:
+            self.image = game.traps_sprite_sheet.get_image(0, 394, 372, 248, 1)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.starting_y_position = int(starting_pos)
+
+    def _animate(self):
+        time_now = pygame.time.get_ticks()
+
+        if self.spike:
+            if time_now - self.last_update_time > random.choice([300, 200, 400, 100]):
+                self.last_update_time = time_now
+                if self.spike_go_up:
+                    self.rect.y -= 5
+                if self.spike_go_down:
+                    self.rect.y += 5
+                if self.rect.y <= self.starting_y_position - SPIKE_HEIGHT:
+                    self.spike_go_up = False
+                    self.spike_go_down = True
+                elif self.rect.y >= self.starting_y_position:
+                    self.spike_go_up = True
+                    self.spike_go_down = False
+
+    def update(self):
+        if self.animation:
+            self._animate()
+        else:
+            pass
+                
+            
+
+        
+
+
 
 
 
