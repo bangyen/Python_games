@@ -30,7 +30,9 @@ WHITE = (255, 255, 255)
 SKYBLUE = (50, 153, 204)
 BUTTON_COLOR = (14, 47, 146)
 
+#traps properties
 SPIKE_HEIGHT = 40
+
 
 
 """#To create spikes animated or not animated"""

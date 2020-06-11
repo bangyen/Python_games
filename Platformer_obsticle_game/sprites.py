@@ -208,9 +208,9 @@ class GraveStone(pygame.sprite.Sprite):
         self.rect.y = y
         
 class SingleFrameSpriteTrap(pygame.sprite.Sprite):
-    def __init__(self, x, y, starting_pos, game, animation=True, spike=True, stone=False, axe=False):
+    def __init__(self, x, y, starting_y_pos, game, animation=True, spike=True, stone=False, axe=False):
         self._layer = TRAP_LAYER
-        self.groups = game.all_sprites, game.spikes
+        self.groups = game.all_sprites, game.traps
         super().__init__(self.groups)
         self.last_update_time = 0
         self.game = game
@@ -222,15 +222,25 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             self.spike_go_up = True
             self.spike_go_down = False 
             self.image = game.traps_sprite_sheet.get_image(260, 1486, 160, 164, 4, False)
+
         if self.stone:
-            self.image = game.traps_sprite_sheet.get_image(0, 0, 394, 394, 1)
+            self.stone_velocity = vector(0, 0)
+            self.stone_acceleration = vector(0, 0)
+            self.stone_position = vector(0, 0)
+            self.update_frame_index = 0
+            the_stone_image = game.traps_sprite_sheet.get_image(0, 0, 394, 394, 5, False)
+            the_stone_image.set_colorkey(BLACK)
+            self.image_rotation_list = [pygame.transform.rotate(the_stone_image, angle) for angle in range(0, 361, 90)]
+            self.image = self.image_rotation_list[0]
+
         if self.axe:
             self.image = game.traps_sprite_sheet.get_image(0, 394, 372, 248, 1)
+        
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.starting_y_position = int(starting_pos)
+        self.starting_y_position = int(starting_y_pos)
 
     def _animate(self):
         time_now = pygame.time.get_ticks()
@@ -249,9 +259,31 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
                     self.spike_go_up = True
                     self.spike_go_down = False
 
+        if self.stone:
+            if time_now - self.last_update_time > 150:
+                self.last_update_time = time_now
+                self.rect.x -= 20
+                self.update_frame_index = (self.update_frame_index + 1) % len(self.image_rotation_list)
+                self.image = self.image_rotation_list[self.update_frame_index]
+                #print(self.rect.x, self.rect.y)
+
     def update(self):
         if self.animation:
             self._animate()
+
+            if self.stone:
+                self.rect.y += 1
+
+                #check platform collsion
+                hits = pygame.sprite.spritecollide(self, self.game.platforms, False)
+                if hits:
+                    self.rect.y -= 1 #stop the ball's y position
+
+                if self.rect.x + 100 <= 0:
+                    self.kill()
+                    
+
+
         else:
             pass
                 

@@ -22,9 +22,7 @@ class Game():
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.platforms = pygame.sprite.Group()
         self.lavas = pygame.sprite.Group()
-        self.spikes = pygame.sprite.Group() 
-
-
+        self.traps = pygame.sprite.Group() 
         self._load_data()
 
     def _load_data(self):
@@ -86,8 +84,8 @@ class Game():
                     self.main_player.velocity.y = 0 # stop the main character
                     self.main_player.jumping = False
 
-
-        #Game over scenarios
+        #Gamo over scenarios
+        #Fall off a platform
         if self.main_player.position.y - self.main_player.get_height() > HEIGHT:
             self.main_player.kill()
             self._play_sound(self.scream_sound)
@@ -95,14 +93,28 @@ class Game():
             self.game_over_text = "fell"
             self.game_over_screen()
 
+        #Jumped into a lava
         lava_hits = pygame.sprite.spritecollide(self.main_player, self.lavas, False, pygame.sprite.collide_mask)
         if lava_hits:
-            #self.burning_sound.play() if self.play_dead_sound else None
             self._play_sound([self.ohh_sound, self.burning_sound])
             self.dead = True
             self.game_over_text = "was burned to death"
             self.game_over_screen()
-      
+
+        #Hit by the traps
+        trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False)
+        if trap_hit:
+            if trap_hit[0].spike:
+                self.game_over_text = "was stung to death"
+            if trap_hit[0].stone:
+                self.game_over_text = "was hit by a boulder and died"
+
+            self._play_sound(self.ohh_sound)
+            self.dead = True
+            self.game_over_screen()
+
+        #print(self.all_sprites)
+            
            
     def _draw(self):
         WIN.fill(SKYBLUE)
@@ -121,6 +133,10 @@ class Game():
         pygame.display.flip()
 
     def new_game(self):
+        """Level 1: new_game function which displays 
+        the main character Joe, the initial grass platform, 
+        a lava pond and traps"""
+
         self.main_player = MainCharacter(self)
 
         #Initial platforms for the main character
@@ -133,7 +149,15 @@ class Game():
             else:
                 Platform(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 8, self)
         
+        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, HEIGHT / 2, self, True, False, True) #Stone
+        
+        SingleFrameSpriteTrap(self.main_player.position.x + 30, self.main_player.position.y - 90, self.main_player.position.y - 90, self) #spike
+        Platform(self.main_player.position.x + 30, self.main_player.position.y -90, self)
 
+        SingleFrameSpriteTrap(self.main_player.position.x + 100, self.main_player.position.y - 90 -SPIKE_HEIGHT, self.main_player.position.y - 90, self, False) #spike
+        Platform(self.main_player.position.x + 100, self.main_player.position.y -90, self)
+
+       
     def run(self):
         """Game loop"""
 
@@ -144,9 +168,8 @@ class Game():
             self._draw()
 
     def game_over_screen(self):
-        if self.dead:
-            GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
-            self.main_player.kill()
+        GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
+        self.main_player.kill()
 
 
 
