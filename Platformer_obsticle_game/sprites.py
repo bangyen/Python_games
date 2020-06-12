@@ -1,6 +1,7 @@
 import pygame
 import random
 import os
+from time import sleep
 from game_settings import *
 
 vector = pygame.math.Vector2
@@ -208,11 +209,12 @@ class GraveStone(pygame.sprite.Sprite):
         self.rect.y = y
         
 class SingleFrameSpriteTrap(pygame.sprite.Sprite):
-    def __init__(self, x, y, starting_y_pos, game, animation=True, spike=True, stone=False, axe=False):
+    def __init__(self, x, y, starting_x_pos, starting_y_pos, game, animation=True, spike=True, stone=False, axe=False):
         self._layer = TRAP_LAYER
         self.groups = game.all_sprites, game.traps
         super().__init__(self.groups)
         self.last_update_time = 0
+        self.spike_update_time_2 = 0
         self.game = game
         self.animation = animation
         self.spike = spike
@@ -240,10 +242,13 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+        self.mask = pygame.mask.from_surface(self.image)
+        self.starting_x_position = int(starting_x_pos)
         self.starting_y_position = int(starting_y_pos)
 
     def _animate(self):
         time_now = pygame.time.get_ticks()
+        time_now_2 = pygame.time.get_ticks()
 
         if self.spike:
             if time_now - self.last_update_time > random.choice([300, 200, 400, 100]):
@@ -255,17 +260,21 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
                 if self.rect.y <= self.starting_y_position - SPIKE_HEIGHT:
                     self.spike_go_up = False
                     self.spike_go_down = True
-                elif self.rect.y >= self.starting_y_position:
-                    self.spike_go_up = True
-                    self.spike_go_down = False
+                elif self.rect.y >= self.starting_y_position: #when the spikes go behind the platform, hide the spikes in 6 sec
+                    self.rect.y -= 5
+                    if time_now_2 - self.spike_update_time_2 > 6000: #6 sec
+                        self.spike_update_time_2 = time_now_2
+                        self.spike_go_up = True
+                        self.spike_go_down = False
+   
 
         if self.stone:
             if time_now - self.last_update_time > 150:
                 self.last_update_time = time_now
-                self.rect.x -= 20
                 self.update_frame_index = (self.update_frame_index + 1) % len(self.image_rotation_list)
                 self.image = self.image_rotation_list[self.update_frame_index]
-                #print(self.rect.x, self.rect.y)
+
+            self.rect.x -= 2
 
     def update(self):
         if self.animation:
@@ -281,9 +290,6 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
 
                 if self.rect.x + 100 <= 0:
                     self.kill()
-                    
-
-
         else:
             pass
                 

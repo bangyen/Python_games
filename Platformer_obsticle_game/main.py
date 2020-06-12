@@ -71,9 +71,26 @@ class Game():
                 mouse_pos = pygame.mouse.get_pos()
                 if self.play_again_btn.collidepoint(mouse_pos):
                     main()
+
+    def _check_trap_hit(self, trap_hit_list, hits_platform):
+        if trap_hit_list[0].spike: 
+            if self.main_player.velocity.y < 0 or self.main_player.velocity.y > 0:
+                self.game_over_text = "was stung to death"
+                return True
+            if hits_platform and trap_hit_list[0].spike_go_up:
+                self.game_over_text = "was stung to death"
+                return True
+            else:
+                return False 
+            
+        if trap_hit_list[0].stone:
+            self.game_over_text = "was hit by a boulder and died"
+            return True
+
                 
     def _update(self):
         self.all_sprites.update()
+        #print(self.main_player.velocity.y)
         
         #Collision with the platform and stop the main_player if he hits the top of the plaform
         hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
@@ -102,20 +119,14 @@ class Game():
             self.game_over_screen()
 
         #Hit by the traps
-        trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False)
+        trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False, pygame.sprite.collide_mask)
         if trap_hit:
-            if trap_hit[0].spike:
-                self.game_over_text = "was stung to death"
-            if trap_hit[0].stone:
-                self.game_over_text = "was hit by a boulder and died"
-
-            self._play_sound(self.ohh_sound)
-            self.dead = True
-            self.game_over_screen()
-
-        #print(self.all_sprites)
+            if self._check_trap_hit(trap_hit, hits_platform):
+                self.dead = True
+                self._play_sound(self.ohh_sound)
+                self.game_over_screen()
             
-           
+            
     def _draw(self):
         WIN.fill(SKYBLUE)
         self.all_sprites.draw(WIN)
@@ -149,12 +160,12 @@ class Game():
             else:
                 Platform(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 8, self)
         
-        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, HEIGHT / 2, self, True, False, True) #Stone
+        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, HEIGHT / 2,HEIGHT / 2, self, True, False, True) #Stone
         
-        SingleFrameSpriteTrap(self.main_player.position.x + 30, self.main_player.position.y - 90, self.main_player.position.y - 90, self) #spike
+        SingleFrameSpriteTrap(self.main_player.position.x + 30, self.main_player.position.y - 90, self.main_player.position.x + 30, self.main_player.position.y - 90, self) #spike
         Platform(self.main_player.position.x + 30, self.main_player.position.y -90, self)
 
-        SingleFrameSpriteTrap(self.main_player.position.x + 100, self.main_player.position.y - 90 -SPIKE_HEIGHT, self.main_player.position.y - 90, self, False) #spike
+        SingleFrameSpriteTrap(self.main_player.position.x + 100, self.main_player.position.y - 90 -SPIKE_HEIGHT, self.main_player.position.x + 100, self.main_player.position.y - 90, self, False) #spike
         Platform(self.main_player.position.x + 100, self.main_player.position.y -90, self)
 
        
@@ -169,8 +180,14 @@ class Game():
 
     def game_over_screen(self):
         GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
-        self.main_player.kill()
 
+        for trap in self.traps:
+            if trap.spike:
+                pass
+            else:
+                trap.kill()
+
+        self.main_player.kill()
 
 
 def main():
