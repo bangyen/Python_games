@@ -1,5 +1,9 @@
+"""Author: Kristofer Gauti"""
+"""Adventurous Joe is an obsticle game which was inspired by Super Mario"""
+
 """Enemy sprites are from https://szadiart.itch.io/animated-character-pack?download"""
 """Main character is from https://jesse-m.itch.io/jungle-pack"""
+"""The traps are from https://opengameart.org/content/animated-traps-and-obstacles"""
 
 import pygame
 import random
@@ -22,6 +26,7 @@ class Game():
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.platforms = pygame.sprite.Group()
         self.lavas = pygame.sprite.Group()
+        self.fireballs = pygame.sprite.Group()
         self.traps = pygame.sprite.Group() 
         self._load_data()
 
@@ -36,13 +41,13 @@ class Game():
 
     def _play_sound(self, wav_file):
         if isinstance(wav_file, list):
-            if self.play_dead_sound:
+            if self.play_dead_sound: #Play the sound once
                 wav_file[0].play()
                 sleep(0.2) #from the time module
                 wav_file[1].play()
                 self.play_dead_sound = False
         else:
-            if self.play_dead_sound:
+            if self.play_dead_sound: #play the soudn once
                 wav_file.play()
                 self.play_dead_sound = False
         
@@ -73,18 +78,26 @@ class Game():
                     main()
 
     def _check_trap_hit(self, trap_hit_list, hits_platform):
-        if trap_hit_list[0].spike: 
-            if self.main_player.velocity.y < 0 or self.main_player.velocity.y > 0:
+        if trap_hit_list[0].spike:
+            try:
+                if hits_platform[0].rect.top and trap_hit_list[0].spike_go_up:
+                    self.game_over_text = "was stung to death"
+                    return True
+                if (trap_hit_list[0].spike_go_down and trap_hit_list[0].rect.bottom or
+                trap_hit_list[0].spike_go_down and trap_hit_list[0].rect.left or
+                trap_hit_list[0].spike_go_down and trap_hit_list[0].rect.right):
+                    return False
+
+            except IndexError:
                 self.game_over_text = "was stung to death"
                 return True
-            if hits_platform and trap_hit_list[0].spike_go_up:
-                self.game_over_text = "was stung to death"
-                return True
-            else:
-                return False 
             
         if trap_hit_list[0].stone:
             self.game_over_text = "was hit by a boulder and died"
+            return True
+
+        if trap_hit_list[0].axe:
+            self.game_over_text = "was cut by an axe to death"
             return True
 
                 
@@ -118,6 +131,13 @@ class Game():
             self.game_over_text = "was burned to death"
             self.game_over_screen()
 
+        fireball_hits = pygame.sprite.spritecollide(self.main_player, self.fireballs, False, pygame.sprite.collide_mask)
+        if fireball_hits:
+            self._play_sound([self.ohh_sound, self.burning_sound])
+            self.dead = True
+            self.game_over_text = "was burned from a fireball to death"
+            self.game_over_screen()
+
         #Hit by the traps
         trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False, pygame.sprite.collide_mask)
         if trap_hit:
@@ -126,17 +146,13 @@ class Game():
                 self._play_sound(self.ohh_sound)
                 self.game_over_screen()
             
-            
     def _draw(self):
         WIN.fill(SKYBLUE)
         self.all_sprites.draw(WIN)
         #Display score and coins later
 
         if self.dead:
-            button_width = 200
-            button_height = 70
-            self.play_again_btn = pygame.draw.rect(WIN, BUTTON_COLOR, (WIDTH / 2 - button_width / 2, HEIGHT / 2 - 20, button_width, button_height))
-
+            self.play_again_btn = pygame.draw.rect(WIN, BUTTON_COLOR, (WIDTH / 2 - PLAY_BTN_WIDTH / 2, HEIGHT / 2 - 20, PLAY_BTN_WIDTH, PLAY_BTN_HEIGHT))
             self._draw_text(WIDTH / 2, 140, "Game Over!", 40, WHITE)
             self._draw_text(WIDTH / 2, 170, "Joe {}!".format(self.game_over_text), 40, WHITE)
             self._draw_text(WIDTH / 2, HEIGHT / 2, "Play Again!", 40, WHITE)
@@ -148,27 +164,28 @@ class Game():
         the main character Joe, the initial grass platform, 
         a lava pond and traps"""
 
-        self.main_player = MainCharacter(self)
+        self.main_player = MainCharacter(40, HEIGHT - 50, self)
 
-        #Initial platforms for the main character
+        #Initial platforms for the main character 
         grass_platform = Platform(self.main_player.position.x, self.main_player.position.y + 8, self)
         Platform(self.main_player.position.x - grass_platform.get_size(), self.main_player.position.y + 8, self)
         
-        for i in range(20):
-            if 9 <= i <= 11:
-                Lava(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 2, self)
+        for i in range(26):
+            if 16 <= i <= 19:
+                if i == 18 or i == 19:
+                    Lava(self.main_player.position.x + (grass_platform.get_size() * i) - 15, self.main_player.position.y + 2, self, True)
+                Lava(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 2, self, False)
             else:
                 Platform(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 8, self)
         
-        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, HEIGHT / 2,HEIGHT / 2, self, True, False, True) #Stone
-        
-        SingleFrameSpriteTrap(self.main_player.position.x + 30, self.main_player.position.y - 90, self.main_player.position.x + 30, self.main_player.position.y - 90, self) #spike
-        Platform(self.main_player.position.x + 30, self.main_player.position.y -90, self)
+        #Spawn a boulder
+        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, self, True, False, True)
 
-        SingleFrameSpriteTrap(self.main_player.position.x + 100, self.main_player.position.y - 90 -SPIKE_HEIGHT, self.main_player.position.x + 100, self.main_player.position.y - 90, self, False) #spike
-        Platform(self.main_player.position.x + 100, self.main_player.position.y -90, self)
+        #Spawn an axes
+        SingleFrameSpriteTrap(WIDTH - 400, 10, self, True, False, False, True)
+        SingleFrameSpriteTrap(WIDTH / 2, 30, self, True, False, False, True)
 
-       
+
     def run(self):
         """Game loop"""
 
@@ -187,8 +204,10 @@ class Game():
             else:
                 trap.kill()
 
-        self.main_player.kill()
+        for fireball in self.fireballs:
+            fireball.kill()
 
+        self.main_player.kill()
 
 def main():
     obsticle_game = Game()
