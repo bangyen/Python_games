@@ -38,13 +38,4 @@ LAVA_BALL_FRICTION = -0.09
 #Additional constants
 PLAY_BTN_WIDTH = 200
 PLAY_BTN_HEIGHT = 70
-
-
-
-
-"""#To create spikes animated or not animated"""
-# SingleFrameSpriteTrap(self.main_player.position.x - 30, self.main_player.position.y - 90, self.main_player.position.y - 90, self) #spike
-# Platform(self.main_player.position.x - 30, self.main_player.position.y -90, self)
-
-# SingleFrameSpriteTrap(self.main_player.position.x + 100, self.main_player.position.y - 90 -SPIKE_HEIGHT, self.main_player.position.y - 90, self, False) #spike
-# Platform(self.main_player.position.x + 100, self.main_player.position.y -90, self)
+CAMERA_FOCUSPOINT_X_POS = 130

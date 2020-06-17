@@ -130,7 +130,11 @@ class MainCharacter(pygame.sprite.Sprite):
             self.velocity.y += PLAYER_JUMP
 
     def cut_jump(self):
-        pass
+        mini_jump = PLAYER_JUMP // 4
+
+        if self.jumping:
+            if self.velocity.y < mini_jump:
+                self.velocity.y = mini_jump
 
     def get_height(self):
         return self.image.get_height()
@@ -362,12 +366,12 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
                 self.kill()
             
         if self.axe:
-            self.rect.y += 2
+            self.rect.y += 3
             
             if hits:
                 self.image = self.stop_axe_image_list[self.random_num]
                 self.rect.x += 2
-                self.rect.y -= 2
+                self.rect.y -= 3
 
 
             

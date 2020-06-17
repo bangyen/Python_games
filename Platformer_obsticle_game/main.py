@@ -5,6 +5,14 @@
 """Main character is from https://jesse-m.itch.io/jungle-pack"""
 """The traps are from https://opengameart.org/content/animated-traps-and-obstacles"""
 
+"""TODO: Camera system check
+         Make a level system and add a sign on the end platform in level 1 for instruction board,
+         Add a coin system
+         Add a shop for buying weapons and powerups like super jump, extra lives
+         Add a inventory
+"""
+
+
 import pygame
 import random
 import os
@@ -47,7 +55,7 @@ class Game():
                 wav_file[1].play()
                 self.play_dead_sound = False
         else:
-            if self.play_dead_sound: #play the soudn once
+            if self.play_dead_sound: #play the sound once
                 wav_file.play()
                 self.play_dead_sound = False
         
@@ -70,8 +78,7 @@ class Game():
                 if event.key == pygame.K_SPACE:
                     self.main_player.jump()
             if event.type == pygame.KEYUP:
-                #Main character short jump
-                pass
+                self.main_player.cut_jump()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: #event.button == 1 is the leftmousebutton
                 mouse_pos = pygame.mouse.get_pos()
                 if self.play_again_btn.collidepoint(mouse_pos):
@@ -103,7 +110,6 @@ class Game():
                 
     def _update(self):
         self.all_sprites.update()
-        #print(self.main_player.velocity.y)
         
         #Collision with the platform and stop the main_player if he hits the top of the plaform
         hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
@@ -113,8 +119,27 @@ class Game():
                     self.main_player.position.y = hits_platform[0].rect.top
                     self.main_player.velocity.y = 0 # stop the main character
                     self.main_player.jumping = False
+     
+        #Move the camera's focuspoint further to the right, I can do this better
+        camera_speed = max(abs(int(self.main_player.velocity.x // 2)), 2) + 2
+        if self.main_player.position.x >= CAMERA_FOCUSPOINT_X_POS:
+            for sprite in self.all_sprites:
+                sprite.rect.x -= camera_speed 
+                if sprite.rect.right < 0:
+                    sprite.kill()
+            for lavaball in self.fireballs:
+                lavaball.position.x -= camera_speed
+                if lavaball.position.x < 0:
+                    lavaball.kill()
+            self.main_player.position.x -= camera_speed
+        
+            
+        #Don't let Joe go off the left side of the screen
+        if self.main_player.position.x <= 0:
+            self.main_player.position.x = 20
 
-        #Gamo over scenarios
+
+        """Game over scenarios"""
         #Fall off a platform
         if self.main_player.position.y - self.main_player.get_height() > HEIGHT:
             self.main_player.kill()
@@ -185,7 +210,6 @@ class Game():
         SingleFrameSpriteTrap(WIDTH - 400, 10, self, True, False, False, True)
         SingleFrameSpriteTrap(WIDTH / 2, 30, self, True, False, False, True)
 
-
     def run(self):
         """Game loop"""
 
@@ -196,12 +220,11 @@ class Game():
             self._draw()
 
     def game_over_screen(self):
+        self.main_player.velocity.x = 0
         GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
 
         for trap in self.traps:
-            if trap.spike:
-                pass
-            else:
+            if not trap.spike:
                 trap.kill()
 
         for fireball in self.fireballs:
