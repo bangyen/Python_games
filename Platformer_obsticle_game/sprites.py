@@ -23,7 +23,7 @@ class SpritesheetParser():
 
 class MainCharacter(pygame.sprite.Sprite):
     def __init__(self, x, y, game):
-        self._layer = MAIN_CHAARACTER_LAYER
+        self._layer = MAIN_CHARACTER_LAYER
         self.groups = game.all_sprites
         super().__init__(self.groups)
         self.game = game
@@ -162,7 +162,7 @@ class Platform(pygame.sprite.Sprite):
 
 class GraveStone(pygame.sprite.Sprite):
     def __init__(self, x, y, game):
-        self._layer = MAIN_CHAARACTER_LAYER
+        self._layer = MAIN_CHARACTER_LAYER
         self.groups = game.all_sprites
         super().__init__(self.groups)
         self.game = game

@@ -5,8 +5,8 @@
 """Main character is from https://jesse-m.itch.io/jungle-pack"""
 """The traps are from https://opengameart.org/content/animated-traps-and-obstacles"""
 
-"""TODO: Camera system check
-         Make a level system and add a sign on the end platform in level 1 for instruction board,
+"""TODO: Camera system - Done
+         Make a level system and add a sign on the end platform in level 1 for instruction board, - almost done
          Add a coin system
          Add a shop for buying weapons and powerups like super jump, extra lives
          Add a inventory
@@ -20,51 +20,38 @@ from time import sleep
 
 from game_settings import *
 from sprites import *
+from levels import *
 
 class Game():
     def __init__(self):
         self.running = True
         self.playing = True
+        self.draw_level = True
+        self.reset_camera = False
         self.dead = False
         self.play_dead_sound = True
         self.__dirname = os.path.dirname(__file__)
         self.__sound_dir = os.path.join(self.__dirname, "sounds")
         self.spritesheet_dir = os.path.join(self.__dirname, "spritesheet")
         self.game_over_text = ""
+        self.camera_movement_x_coordinate = CAMERA_FOCUSPOINT_X_POS
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.platforms = pygame.sprite.Group()
         self.lavas = pygame.sprite.Group()
         self.fireballs = pygame.sprite.Group()
         self.traps = pygame.sprite.Group() 
         self._load_data()
-
+        self.level_index = 0
+        self.levels = [opening_level_part2, level_1, level_2]
+  
     def _load_data(self):
-        self.main_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "spritesheet.png"))
+        self.main_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "enemies_maincharacter_spritesheet.png"))
         self.traps_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "traps_rip_joe_spritesheet.png"))
 
         #load sounds 
         self.scream_sound = pygame.mixer.Sound(os.path.join(self.__sound_dir, "man_scream.wav"))
         self.burning_sound = pygame.mixer.Sound(os.path.join(self.__sound_dir, "burning.wav"))
         self.ohh_sound = pygame.mixer.Sound(os.path.join(self.__sound_dir, "classic_hurt.wav"))
-
-    def _play_sound(self, wav_file):
-        if isinstance(wav_file, list):
-            if self.play_dead_sound: #Play the sound once
-                wav_file[0].play()
-                sleep(0.2) #from the time module
-                wav_file[1].play()
-                self.play_dead_sound = False
-        else:
-            if self.play_dead_sound: #play the sound once
-                wav_file.play()
-                self.play_dead_sound = False
-        
-    def _draw_text(self, x, y, text, font_size, color):
-        font = pygame.font.SysFont(FONT, font_size)
-        text_surface = font.render(text, 1, color)
-        text_rect = text_surface.get_rect()
-        text_rect.midtop = (x, y)
-        WIN.blit(text_surface, text_rect)
 
     def _events(self):
         """Event handlers"""
@@ -83,6 +70,25 @@ class Game():
                 mouse_pos = pygame.mouse.get_pos()
                 if self.play_again_btn.collidepoint(mouse_pos):
                     main()
+
+    def _draw_text(self, x, y, text, font_size, color):
+        font = pygame.font.SysFont(FONT, font_size)
+        text_surface = font.render(text, 1, color)
+        text_rect = text_surface.get_rect()
+        text_rect.midtop = (x, y)
+        WIN.blit(text_surface, text_rect)
+
+    def _play_sound(self, wav_file):
+        if isinstance(wav_file, list):
+            if self.play_dead_sound: #Play the sound once
+                wav_file[0].play()
+                sleep(0.2) #from the time module
+                wav_file[1].play()
+                self.play_dead_sound = False
+        else:
+            if self.play_dead_sound: #play the sound once
+                wav_file.play()
+                self.play_dead_sound = False
 
     def _check_trap_hit(self, trap_hit_list, hits_platform):
         if trap_hit_list[0].spike:
@@ -107,22 +113,24 @@ class Game():
             self.game_over_text = "was cut by an axe to death"
             return True
 
-                
-    def _update(self):
-        self.all_sprites.update()
-        
-        #Collision with the platform and stop the main_player if he hits the top of the plaform
-        hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
-        if self.main_player.velocity.y > 0: #going down due to gravity
-            if hits_platform:
-                if self.main_player.position.y < hits_platform[0].rect.bottom:
-                    self.main_player.position.y = hits_platform[0].rect.top
-                    self.main_player.velocity.y = 0 # stop the main character
-                    self.main_player.jumping = False
-     
-        #Move the camera's focuspoint further to the right, I can do this better
-        camera_speed = max(abs(int(self.main_player.velocity.x // 2)), 2) + 2
+    def _game_over_functionality(self, sound_when_dead, gameover_text_str):
+        self._play_sound(sound_when_dead)
+        self.dead = True
+        self.game_over_text = gameover_text_str
+        self.game_over_screen()
+
+    def _move_main_player_camera(self):
+        """Move the camera's focuspoint further to the right"""
+
+        camera_speed = max(abs(int(self.main_player.velocity.x // 3)), 2) + 2
         if self.main_player.position.x >= CAMERA_FOCUSPOINT_X_POS:
+            if self.reset_camera: #then reset the camera to the main_player's focuspoint
+                self.camera_movement_x_coordinate = CAMERA_FOCUSPOINT_X_POS
+                self.reset_camera = False
+            else: #move the camera with respect to the main_player's velocity
+                self.camera_movement_x_coordinate += camera_speed 
+
+            #Check if the sprites goes off the screen. If so delete them from their groups  
             for sprite in self.all_sprites:
                 sprite.rect.x -= camera_speed 
                 if sprite.rect.right < 0:
@@ -131,47 +139,76 @@ class Game():
                 lavaball.position.x -= camera_speed
                 if lavaball.position.x < 0:
                     lavaball.kill()
-            self.main_player.position.x -= camera_speed
+
+            self.main_player.position.x -= camera_speed 
+
+    def _change_level(self):
+        """change the level"""
+        if self.camera_movement_x_coordinate == WIDTH - 50:
+            self.main_player.position.x += 5
+            self.level_index += 1
+            self.reset_camera = True
+            self.draw_level = True
+
+        #This function blits the upcomming next levels
+        if self.draw_level: #draw the level once
+            try:
+                self.levels[self.level_index](self.main_player, self.grass_platform, self) #self.levels is a list containing functions of the levels in levels.py
+            except IndexError:
+                self.winning_screen()
+
+            self.draw_level = False
+   
+    def _update(self):
+        """Update function which updates every sprites,
+        checks for a sprite collision and moves the camera.
+        Put in helper functions later"""
+
+        self.all_sprites.update()
         
-            
+        #Collision (rect collision) with the platform and stop the main_player if he hits the top of the plaform
+        hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
+        if self.main_player.velocity.y > 0: #going down due to gravity
+            if hits_platform:
+                if self.main_player.position.y < hits_platform[0].rect.bottom:
+                    self.main_player.position.y = hits_platform[0].rect.top
+                    self.main_player.velocity.y = 0 # stop the main character
+                    self.main_player.jumping = False
+      
         #Don't let Joe go off the left side of the screen
         if self.main_player.position.x <= 0:
             self.main_player.position.x = 20
-
 
         """Game over scenarios"""
         #Fall off a platform
         if self.main_player.position.y - self.main_player.get_height() > HEIGHT:
             self.main_player.kill()
-            self._play_sound(self.scream_sound)
-            self.dead = True
-            self.game_over_text = "fell"
-            self.game_over_screen()
+            self._game_over_functionality(self.scream_sound, "fell")
 
-        #Jumped into a lava
+        #Obsticle hit lists (mask collision -> pixel perfect collision)
         lava_hits = pygame.sprite.spritecollide(self.main_player, self.lavas, False, pygame.sprite.collide_mask)
-        if lava_hits:
-            self._play_sound([self.ohh_sound, self.burning_sound])
-            self.dead = True
-            self.game_over_text = "was burned to death"
-            self.game_over_screen()
-
         fireball_hits = pygame.sprite.spritecollide(self.main_player, self.fireballs, False, pygame.sprite.collide_mask)
-        if fireball_hits:
-            self._play_sound([self.ohh_sound, self.burning_sound])
-            self.dead = True
-            self.game_over_text = "was burned from a fireball to death"
-            self.game_over_screen()
-
-        #Hit by the traps
         trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False, pygame.sprite.collide_mask)
+
+        #Jumped into a lava, hit by the lava balls or hit by the traps
+        if lava_hits:
+            self._game_over_functionality([self.ohh_sound, self.burning_sound], "was burned to death")
+        if fireball_hits:
+            self._game_over_functionality([self.ohh_sound, self.burning_sound], "was burned from a fireball to death")
         if trap_hit:
             if self._check_trap_hit(trap_hit, hits_platform):
                 self.dead = True
                 self._play_sound(self.ohh_sound)
                 self.game_over_screen()
-            
+
+        self._move_main_player_camera()
+        self._change_level()
+        print(self.level_index)
+     
     def _draw(self):
+        """Redraw window function which blits text on 
+        the window again and again"""
+
         WIN.fill(SKYBLUE)
         self.all_sprites.draw(WIN)
         #Display score and coins later
@@ -184,32 +221,6 @@ class Game():
 
         pygame.display.flip()
 
-    def new_game(self):
-        """Level 1: new_game function which displays 
-        the main character Joe, the initial grass platform, 
-        a lava pond and traps"""
-
-        self.main_player = MainCharacter(40, HEIGHT - 50, self)
-
-        #Initial platforms for the main character 
-        grass_platform = Platform(self.main_player.position.x, self.main_player.position.y + 8, self)
-        Platform(self.main_player.position.x - grass_platform.get_size(), self.main_player.position.y + 8, self)
-        
-        for i in range(26):
-            if 16 <= i <= 19:
-                if i == 18 or i == 19:
-                    Lava(self.main_player.position.x + (grass_platform.get_size() * i) - 15, self.main_player.position.y + 2, self, True)
-                Lava(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 2, self, False)
-            else:
-                Platform(self.main_player.position.x + (grass_platform.get_size() * i), self.main_player.position.y + 8, self)
-        
-        #Spawn a boulder
-        SingleFrameSpriteTrap(WIDTH + 80, HEIGHT / 4, self, True, False, True)
-
-        #Spawn an axes
-        SingleFrameSpriteTrap(WIDTH - 400, 10, self, True, False, False, True)
-        SingleFrameSpriteTrap(WIDTH / 2, 30, self, True, False, False, True)
-
     def run(self):
         """Game loop"""
 
@@ -219,9 +230,24 @@ class Game():
             self._update()
             self._draw()
 
+    def opening_level_part1(self):
+        """This function blits 1/2 (part1) of the opening level in the game"""
+
+        self.main_player = MainCharacter(40, HEIGHT - 50, self)
+        self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
+
+        for i in range(26):
+            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
+
+    def winning_screen(self):
+        """Display winning screen if the main_player has destroyed the boss and has won the game"""
+        pass
+
     def game_over_screen(self):
         self.main_player.velocity.x = 0
-        GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
+
+        if self.game_over_text != "fell":
+            GraveStone(self.main_player.position.x - 100, self.main_player.position.y - 150, self)
 
         for trap in self.traps:
             if not trap.spike:
@@ -236,9 +262,7 @@ def main():
     obsticle_game = Game()
 
     while obsticle_game.running:
-        obsticle_game.new_game()
+        obsticle_game.opening_level_part1()
         obsticle_game.run()
 
 main()
-        
-
