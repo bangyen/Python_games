@@ -29,6 +29,7 @@ class Game():
         self.draw_level = True
         self.reset_camera = False
         self.dead = False
+        self.display_instructions = False
         self.play_dead_sound = True
         self.__dirname = os.path.dirname(__file__)
         self.__sound_dir = os.path.join(self.__dirname, "sounds")
@@ -47,6 +48,7 @@ class Game():
     def _load_data(self):
         self.main_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "enemies_maincharacter_spritesheet.png"))
         self.traps_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "traps_rip_joe_spritesheet.png"))
+        self.title_boss_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "title_sign_boss_spritesheet.png"))
 
         #load sounds 
         self.scream_sound = pygame.mixer.Sound(os.path.join(self.__sound_dir, "man_scream.wav"))
@@ -64,6 +66,9 @@ class Game():
                     quit()
                 if event.key == pygame.K_SPACE:
                     self.main_player.jump()
+                if event.key == pygame.K_r:
+                    if self.display_instructions:
+                        print("instruction display later")
             if event.type == pygame.KEYUP:
                 self.main_player.cut_jump()
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: #event.button == 1 is the leftmousebutton
@@ -105,13 +110,17 @@ class Game():
                 self.game_over_text = "was stung to death"
                 return True
             
-        if trap_hit_list[0].stone:
+        elif trap_hit_list[0].stone:
             self.game_over_text = "was hit by a boulder and died"
             return True
 
-        if trap_hit_list[0].axe:
+        elif trap_hit_list[0].axe:
             self.game_over_text = "was cut by an axe to death"
             return True
+
+        else:
+            return False
+        
 
     def _game_over_functionality(self, sound_when_dead, gameover_text_str):
         self._play_sound(sound_when_dead)
@@ -143,7 +152,10 @@ class Game():
             self.main_player.position.x -= camera_speed 
 
     def _change_level(self):
-        """change the level"""
+        """If the camera's x coordinate has reached the 
+        width of the screen - 50 then blit the next level 
+        and reset the camera to its initial x coordinate"""
+
         if self.camera_movement_x_coordinate == WIDTH - 50:
             self.main_player.position.x += 5
             self.level_index += 1
@@ -179,7 +191,6 @@ class Game():
         if self.main_player.position.x <= 0:
             self.main_player.position.x = 20
 
-        """Game over scenarios"""
         #Fall off a platform
         if self.main_player.position.y - self.main_player.get_height() > HEIGHT:
             self.main_player.kill()
@@ -196,14 +207,19 @@ class Game():
         if fireball_hits:
             self._game_over_functionality([self.ohh_sound, self.burning_sound], "was burned from a fireball to death")
         if trap_hit:
+            if trap_hit[0].sign:
+                self.display_instructions = True
+
             if self._check_trap_hit(trap_hit, hits_platform):
                 self.dead = True
                 self._play_sound(self.ohh_sound)
                 self.game_over_screen()
+        else:
+            self.display_instructions = False
 
         self._move_main_player_camera()
         self._change_level()
-        print(self.level_index)
+        #print(self.level_index)
      
     def _draw(self):
         """Redraw window function which blits text on 
@@ -218,6 +234,9 @@ class Game():
             self._draw_text(WIDTH / 2, 140, "Game Over!", 40, WHITE)
             self._draw_text(WIDTH / 2, 170, "Joe {}!".format(self.game_over_text), 40, WHITE)
             self._draw_text(WIDTH / 2, HEIGHT / 2, "Play Again!", 40, WHITE)
+        if self.display_instructions:
+            self._draw_text(self.sign.rect.centerx, self.sign.rect.y - 25, "Press r to read", 25, WHITE)
+
 
         pygame.display.flip()
 
@@ -235,8 +254,10 @@ class Game():
 
         self.main_player = MainCharacter(40, HEIGHT - 50, self)
         self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
+        self.sign = SingleFrameSpriteTrap(WIDTH * 3/4, BOTTOM_PLATFORM_Y_COORDINATE - 70, self, False, False, False, False, True)
+        GameTitle(WIDTH / 2, 100, self)
 
-        for i in range(26):
+        for i in range(25):
             Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
 
     def winning_screen(self):

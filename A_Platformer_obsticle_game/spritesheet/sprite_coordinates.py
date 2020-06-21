@@ -117,3 +117,11 @@
 {"spritename":"mine_2.png","x":260,"y":2454,"height":109,"width":151},
 {"spritename":"rip_joe.png","x":388,"y":3458,"height":100,"width":100}
 ]
+
+#Title, sign and the boss
+[{"spritename":"Adventurous-Joe.png","x":0,"y":0,"height":75,"width":769},
+{"spritename":"minotaur-S-stand.png","x":769,"y":0,"height":64,"width":48},
+{"spritename":"minotaur-W-step0.png","x":817,"y":0,"height":64,"width":48},
+{"spritename":"minotaur-W-step2.png","x":865,"y":0,"height":64,"width":48},
+{"spritename":"minotaur-W-step1.png","x":913,"y":0,"height":64,"width":48},
+{"spritename":"signpost.png","x":961,"y":0,"height":42,"width":30}]

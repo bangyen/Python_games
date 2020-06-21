@@ -276,7 +276,7 @@ class Lava(pygame.sprite.Sprite):
         return self.image.get_height()
         
 class SingleFrameSpriteTrap(pygame.sprite.Sprite):
-    def __init__(self, x, y, game, animation=True, spike=True, stone=False, axe=False):
+    def __init__(self, x, y, game, animation=True, spike=True, stone=False, axe=False, sign=False):
         self._layer = TRAP_LAYER
         self.groups = game.all_sprites, game.traps
         super().__init__(self.groups)
@@ -288,7 +288,9 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
         self.spike = spike
         self.stone = stone
         self.axe = axe
+        self.sign = sign
         if self.spike:
+            self.run_once = True
             self.spike_go_up = True
             self.spike_go_down = False 
             self.image = game.traps_sprite_sheet.get_image(260, 1486, 160, 164, 4, False)
@@ -303,6 +305,9 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             self.image_rotation_list = [pygame.transform.rotate(the_image, angle) for angle in range(0, 361, 90)]
             self.image = self.image_rotation_list[0]
 
+        if self.sign:
+            self.image = game.title_boss_sprite_sheet.get_image(961, 0, 42, 30, 2)
+
         self.rect = self.image.get_rect()
         self.top = self.rect.top
         self.rect.x = x
@@ -316,8 +321,10 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
         time_now_2 = pygame.time.get_ticks()
 
         if self.spike:
-            #Spawn a platform underneath the spike
-            Platform(self.starting_x_position, self.starting_y_position, self.game) #grass platform
+            #Spawn once a platform underneath the spike 
+            if self.run_once:
+                Platform(self.starting_x_position, self.starting_y_position, self.game) #grass platform
+                self.run_once = False
 
             #Make the spikes go up and down 300, 200, 400, 100 ms per frame 
             if time_now - self.last_update_time > random.choice([300, 200, 400, 100]):
@@ -344,7 +351,7 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
                 self.update_frame_index = (self.update_frame_index + 1) % len(self.image_rotation_list)
                 self.image = self.image_rotation_list[self.update_frame_index]
 
-            self.rect.x -= 2
+            self.rect.x -= 3
 
     def update(self):
         #check platform collsion
@@ -355,12 +362,14 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             
         if self.spike and not self.animation:
             #Display the platform beneath the spike
-            Platform(self.starting_x_position, self.starting_y_position + SPIKE_HEIGHT, self.game) #grass platform change x, y
+            if self.run_once:
+                Platform(self.starting_x_position, self.starting_y_position + SPIKE_HEIGHT, self.game) #grass platform change x, y
+                self.run_once = False
 
         if self.stone:
-            self.rect.y += 1
+            self.rect.y += 2
             if hits:
-                self.rect.y -= 1 #stop the ball's y position
+                self.rect.y -= 2 #stop the ball's y position
 
             if self.rect.x + 100 <= 0:
                 self.kill()
@@ -370,24 +379,20 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             
             if hits:
                 self.image = self.stop_axe_image_list[self.random_num]
-                self.rect.x += 2
+                self.rect.x += 3
                 self.rect.y -= 3
 
+class GameTitle(pygame.sprite.Sprite):
+    def __init__(self, x, y, game):
+        self._layer = TITLE_LAYER
+        self.groups = game.all_sprites
+        super().__init__(self.groups)
+        self.game = game
+        self.image = game.title_boss_sprite_sheet.get_image(0, 0, 75, 769, 1)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
 
-            
-        
-                
-            
-
-        
-
-
-
-
-
-
-
-
-
-
-
+    def update(self):
+        if int(self.game.main_player.velocity.x) > 0:
+            self.rect.centerx -= min(self.game.main_player.velocity.x, 3)
