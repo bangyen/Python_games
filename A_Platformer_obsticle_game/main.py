@@ -26,10 +26,13 @@ class Game():
     def __init__(self):
         self.running = True
         self.playing = True
+        self.run_once = True
+        self.main_player_can_move = True
         self.draw_level = True
         self.reset_camera = False
         self.dead = False
-        self.display_instructions = False
+        self.display_key_input_instructions = False
+        self.display_bigger_sign = False
         self.play_dead_sound = True
         self.__dirname = os.path.dirname(__file__)
         self.__sound_dir = os.path.join(self.__dirname, "sounds")
@@ -41,6 +44,7 @@ class Game():
         self.lavas = pygame.sprite.Group()
         self.fireballs = pygame.sprite.Group()
         self.traps = pygame.sprite.Group() 
+        self.sign = pygame.sprite.Group()
         self._load_data()
         self.level_index = 0
         self.levels = [opening_level_part2, level_1, level_2]
@@ -61,20 +65,41 @@ class Game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit()
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     quit()
-                if event.key == pygame.K_SPACE:
-                    self.main_player.jump()
-                if event.key == pygame.K_r:
-                    if self.display_instructions:
-                        print("instruction display later")
-            if event.type == pygame.KEYUP:
-                self.main_player.cut_jump()
+
+                if self.main_player_can_move:
+                    if event.key == pygame.K_SPACE: #for jumping
+                        self.main_player.jump()
+                else:
+                    pass
+
+                if event.key == pygame.K_r: #key check for reading the opening level sign
+                    self.main_player.velocity.x = 0
+                    self.run_once = True
+                    self.main_player_can_move = False
+                    if self.display_key_input_instructions:
+                        self.display_bigger_sign = True
+
+                if event.key == pygame.K_b: #key check for stop reading the opening level sign
+                    self.display_bigger_sign = False
+                    self.main_player_can_move = True
+
+            if self.main_player_can_move:
+                if event.type == pygame.KEYUP:
+                    self.main_player.cut_jump()
+            else:
+                pass
+            
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: #event.button == 1 is the leftmousebutton
                 mouse_pos = pygame.mouse.get_pos()
-                if self.play_again_btn.collidepoint(mouse_pos):
-                    main()
+                try: #Catch the error if the user has clicked on the area where play_again_btn should be, when it does not exist
+                    if self.play_again_btn.collidepoint(mouse_pos):
+                        main()
+                except AttributeError:
+                    pass
 
     def _draw_text(self, x, y, text, font_size, color):
         font = pygame.font.SysFont(FONT, font_size)
@@ -187,10 +212,27 @@ class Game():
                     self.main_player.velocity.y = 0 # stop the main character
                     self.main_player.jumping = False
       
-        #Don't let Joe go off the left side of the screen
-        if self.main_player.position.x <= 0:
-            self.main_player.position.x = 20
+        #blit the viewing perspective from Joe when he is reading on the sign (key input = (r))
+        if self.display_bigger_sign:
+            if self.run_once:
+                Sign(WIDTH / 2, HEIGHT * 3/4 - 10, 20, self)
+                self.run_once = False
+        else:
+            for sign in self.sign:
+                if sign.type == "big":
+                    sign.kill()
 
+        #Sign collision
+        sign_hit = pygame.sprite.spritecollide(self.main_player, self.sign, False)
+        if sign_hit:
+            if not self.display_bigger_sign:
+                self.display_key_input_instructions = True
+            else:
+                self.display_key_input_instructions = False
+        else:
+            self.display_key_input_instructions = False
+
+        #Game over scenarios
         #Fall off a platform
         if self.main_player.position.y - self.main_player.get_height() > HEIGHT:
             self.main_player.kill()
@@ -207,19 +249,20 @@ class Game():
         if fireball_hits:
             self._game_over_functionality([self.ohh_sound, self.burning_sound], "was burned from a fireball to death")
         if trap_hit:
-            if trap_hit[0].sign:
-                self.display_instructions = True
-
             if self._check_trap_hit(trap_hit, hits_platform):
                 self.dead = True
                 self._play_sound(self.ohh_sound)
                 self.game_over_screen()
-        else:
-            self.display_instructions = False
+        
+
+        #Don't let Joe go off the left side of the screen
+        if self.main_player.position.x <= 0:
+            self.main_player.position.x = 20
 
         self._move_main_player_camera()
         self._change_level()
         #print(self.level_index)
+        #print(self.all_sprites)
      
     def _draw(self):
         """Redraw window function which blits text on 
@@ -234,9 +277,18 @@ class Game():
             self._draw_text(WIDTH / 2, 140, "Game Over!", 40, WHITE)
             self._draw_text(WIDTH / 2, 170, "Joe {}!".format(self.game_over_text), 40, WHITE)
             self._draw_text(WIDTH / 2, HEIGHT / 2, "Play Again!", 40, WHITE)
-        if self.display_instructions:
-            self._draw_text(self.sign.rect.centerx, self.sign.rect.y - 25, "Press r to read", 25, WHITE)
 
+        if self.display_key_input_instructions:
+            self._draw_text(self.pixel_sign.rect.centerx, self.pixel_sign.rect.y - 25, "Press r to read", 25, WHITE)
+        if self.display_bigger_sign:
+            line_space = 105 #Fix later (it is not good to hard code things)
+            self._draw_text(WIDTH / 2, line_space, "Dear Joe. I was robbed by a red angry minotaur with big horns", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 70, "Find him and get my valuable belongins back at any cost", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 130, "The road is dangerous, watch out for traps", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 200, "He will propably send enemies which can be hostile", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 260, "Be cautious and use the greatest techniques to survive the wilderness", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 320, "Sincerely yours, Jack", 23, WHITE)
+            self._draw_text(WIDTH / 2, line_space + 360, "Press b to continue the adventure", 24, BLACK)
 
         pygame.display.flip()
 
@@ -254,7 +306,7 @@ class Game():
 
         self.main_player = MainCharacter(40, HEIGHT - 50, self)
         self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
-        self.sign = SingleFrameSpriteTrap(WIDTH * 3/4, BOTTOM_PLATFORM_Y_COORDINATE - 70, self, False, False, False, False, True)
+        self.pixel_sign = Sign(WIDTH * 3/4, BOTTOM_PLATFORM_Y_COORDINATE - 30, 2, self)
         GameTitle(WIDTH / 2, 100, self)
 
         for i in range(25):

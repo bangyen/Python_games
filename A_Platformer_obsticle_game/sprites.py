@@ -105,12 +105,15 @@ class MainCharacter(pygame.sprite.Sprite):
         self.acceleration = vector(0, GRAVITY)
 
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            self.acceleration.x = -ACCELERATION
-            self.stand_left = True
-        if keys[pygame.K_RIGHT]:
-            self.acceleration.x = ACCELERATION
-            self.stand_left = False
+        if self.game.main_player_can_move:
+            if keys[pygame.K_LEFT]:
+                self.acceleration.x = -ACCELERATION
+                self.stand_left = True
+            if keys[pygame.K_RIGHT]:
+                self.acceleration.x = ACCELERATION
+                self.stand_left = False
+        else:
+            pass
 
         #Friction phisics equations
         self.acceleration.x += self.velocity.x * FRICTION
@@ -276,7 +279,7 @@ class Lava(pygame.sprite.Sprite):
         return self.image.get_height()
         
 class SingleFrameSpriteTrap(pygame.sprite.Sprite):
-    def __init__(self, x, y, game, animation=True, spike=True, stone=False, axe=False, sign=False):
+    def __init__(self, x, y, game, animation=True, spike=True, stone=False, axe=False):
         self._layer = TRAP_LAYER
         self.groups = game.all_sprites, game.traps
         super().__init__(self.groups)
@@ -288,7 +291,6 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
         self.spike = spike
         self.stone = stone
         self.axe = axe
-        self.sign = sign
         if self.spike:
             self.run_once = True
             self.spike_go_up = True
@@ -304,9 +306,6 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             self.random_num = random.randint(0, len(self.stop_axe_image_list) - 1)
             self.image_rotation_list = [pygame.transform.rotate(the_image, angle) for angle in range(0, 361, 90)]
             self.image = self.image_rotation_list[0]
-
-        if self.sign:
-            self.image = game.title_boss_sprite_sheet.get_image(961, 0, 42, 30, 2)
 
         self.rect = self.image.get_rect()
         self.top = self.rect.top
@@ -392,7 +391,20 @@ class GameTitle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = x
         self.rect.centery = y
+        self.initial_player_x_pos = game.main_player.position.x
 
     def update(self):
-        if int(self.game.main_player.velocity.x) > 0:
-            self.rect.centerx -= min(self.game.main_player.velocity.x, 3)
+        if int(self.game.main_player.position.x) > self.initial_player_x_pos + 160:
+            self.rect.centerx -= 5
+
+class Sign(pygame.sprite.Sprite):
+    def __init__(self, x, y, scale_num, game):
+        self._layer = TITLE_LAYER
+        self.groups = game.all_sprites, game.sign
+        super().__init__(self.groups)
+        self.scale_num = scale_num
+        self.type = "small" if self.scale_num < 5 else "big" 
+        self.image = game.title_boss_sprite_sheet.get_image(961, 0, 42, 30, scale_num)
+        self.rect = self.image.get_rect()
+        self.rect.centerx = x
+        self.rect.centery = y
