@@ -20,6 +20,7 @@ TRAP_LAYER = 1
 FIREBALL_LAYER = 1
 TITLE_LAYER = 2
 PIXEL_SIGN_LAYER = 2
+ENEMY_LAYER = 2
 
 #Main character's properties
 GRAVITY = 0.8

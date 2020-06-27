@@ -45,6 +45,7 @@ class Game():
         self.fireballs = pygame.sprite.Group()
         self.traps = pygame.sprite.Group() 
         self.sign = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group()
         self._load_data()
         self.level_index = 0
         self.levels = [opening_level_part2, level_1, level_2]
@@ -79,8 +80,8 @@ class Game():
                 if event.key == pygame.K_r: #key check for reading the opening level sign
                     self.main_player.velocity.x = 0
                     self.run_once = True
-                    self.main_player_can_move = False
                     if self.display_key_input_instructions:
+                        self.main_player_can_move = False
                         self.display_bigger_sign = True
 
                 if event.key == pygame.K_b: #key check for stop reading the opening level sign
@@ -143,8 +144,14 @@ class Game():
             self.game_over_text = "was cut by an axe to death"
             return True
 
-        else:
-            return False
+    def _check_enemy_hit(self, enemy_list):
+        for enemy in enemy_list:
+            if enemy.type == "snake":
+                self.game_over_text = "was eaten by snakes"
+                return True
+            if enemy.type == "bleh":
+                pass
+                
         
 
     def _game_over_functionality(self, sound_when_dead, gameover_text_str):
@@ -173,6 +180,10 @@ class Game():
                 lavaball.position.x -= camera_speed
                 if lavaball.position.x < 0:
                     lavaball.kill()
+            # for enemy in self.enemies:
+            #     enemy.rect.x -= camera_speed
+            #     if enemy.rect.x < 0:
+            #         enemy.kill()
 
             self.main_player.position.x -= camera_speed 
 
@@ -242,8 +253,9 @@ class Game():
         lava_hits = pygame.sprite.spritecollide(self.main_player, self.lavas, False, pygame.sprite.collide_mask)
         fireball_hits = pygame.sprite.spritecollide(self.main_player, self.fireballs, False, pygame.sprite.collide_mask)
         trap_hit = pygame.sprite.spritecollide(self.main_player, self.traps, False, pygame.sprite.collide_mask)
+        enemy_hit = pygame.sprite.spritecollide(self.main_player, self.enemies, False, pygame.sprite.collide_mask)
 
-        #Jumped into a lava, hit by the lava balls or hit by the traps
+        #Jumped into a lava, hit by the lava balls or hit by the traps (Fix this later, put in function)
         if lava_hits:
             self._game_over_functionality([self.ohh_sound, self.burning_sound], "was burned to death")
         if fireball_hits:
@@ -253,16 +265,22 @@ class Game():
                 self.dead = True
                 self._play_sound(self.ohh_sound)
                 self.game_over_screen()
-        
 
+        #Gotten hit by the enemies
+        if enemy_hit:
+            if self._check_enemy_hit(enemy_hit):
+                self.dead = True
+                self._play_sound(self.ohh_sound)
+                self.game_over_screen()
+
+        
         #Don't let Joe go off the left side of the screen
         if self.main_player.position.x <= 0:
             self.main_player.position.x = 20
 
-        self._move_main_player_camera()
-        self._change_level()
-        #print(self.level_index)
-        #print(self.all_sprites)
+        """Uncomment the line below when done designing the level in test_level"""
+        self._move_main_player_camera() 
+        #self._change_level()
      
     def _draw(self):
         """Redraw window function which blits text on 
@@ -312,6 +330,29 @@ class Game():
         for i in range(25):
             Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
 
+    def test_level(self):
+        """Function for designing levels (level 3)"""
+
+        self.main_player = MainCharacter(40, HEIGHT - 50, self)
+        self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
+        Platform(self.main_player.position.x, BOTTOM_PLATFORM_Y_COORDINATE, self)
+
+        for i in range(125, 251, 125):
+            Platform(self.main_player.position.x + i, HEIGHT - i, self)
+            Platform(self.main_player.position.x + self.grass_platform.get_size() + i, HEIGHT - i, self)
+            Platform(self.main_player.position.x + 2*self.grass_platform.get_size() + i, HEIGHT - i, self)
+            plat = Platform(self.main_player.position.x + 3*self.grass_platform.get_size() + i, HEIGHT - i, self)
+            Platform(self.main_player.position.x + 4*self.grass_platform.get_size() + i, HEIGHT - i, self)
+
+        for j in range(4):
+            Platform(WIDTH / 2 + (self.grass_platform.get_size() * j), HEIGHT - 100, self)
+            sec_plat = Platform(WIDTH * 3/4 + (self.grass_platform.get_size() * j), HEIGHT - 200, self)
+
+        
+        Snake(plat, self)
+        Snake(sec_plat, self)
+    
+
     def winning_screen(self):
         """Display winning screen if the main_player has destroyed the boss and has won the game"""
         pass
@@ -335,7 +376,8 @@ def main():
     obsticle_game = Game()
 
     while obsticle_game.running:
-        obsticle_game.opening_level_part1()
+        obsticle_game.test_level()
+        #obsticle_game.opening_level_part1()
         obsticle_game.run()
 
 main()
