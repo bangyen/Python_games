@@ -326,7 +326,7 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
                     self.spike_go_down = True
                 elif self.rect.y >= self.starting_y_position + 1: #when the spikes go behind the platform, hide the spikes behind the platform in 6 sec
                     self.rect.y -= 5
-                    if time_now_2 - self.spike_update_time_2 > 6000: #6 sec
+                    if time_now_2 - self.spike_update_time_2 > random.choice([4000, 3000, 5000]): #Hide behind the platform for 4, 3 or 5 sec
                         self.spike_update_time_2 = time_now_2
                         self.spike_go_up = True
                         self.spike_go_down = False
