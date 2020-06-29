@@ -14,8 +14,9 @@ pygame.mixer.init()
 pygame.display.set_caption("Adventurous Joe")
 
 #Layers
-PLATFORM_LAYER = 2
-MAIN_CHARACTER_LAYER = 3
+PLATFORM_LAYER = 3
+LAVA_LAYER = 2
+MAIN_CHARACTER_LAYER = 4
 TRAP_LAYER = 1
 FIREBALL_LAYER = 1
 TITLE_LAYER = 2

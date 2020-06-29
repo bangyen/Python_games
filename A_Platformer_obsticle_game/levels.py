@@ -5,7 +5,7 @@ SPIKE_NO_ANIMATION_HEIGHT_MARGIN = 40
 SPIKE_NO_ANIMATION_WIDTH_MARGIN = 42
 
 """Functions for blitting the next levels"""
-def opening_level_part2(main_player, initial_platform, game):
+def opening_level_part2(initial_platform, game):
     for i in range(4):
         Platform(WIDTH + 50 + (initial_platform.get_size() * i), HEIGHT - 150, game)
         Platform(WIDTH + 300 + (initial_platform.get_size() * i), HEIGHT / 2, game)
@@ -15,7 +15,7 @@ def opening_level_part2(main_player, initial_platform, game):
         SingleFrameSpriteTrap(WIDTH + 300 + SPIKE_NO_ANIMATION_WIDTH_MARGIN + (initial_platform.get_size() * j), HEIGHT / 2 - SPIKE_NO_ANIMATION_HEIGHT_MARGIN, game, False)
 
 
-def level_1(main_player, initial_platform, game):
+def level_1(initial_platform, game):
     """Level 1 and the opening level are together. 
     When the camera's x position reaches WIDTH - 50 
     the next level is blit on the window with the coordinates 
@@ -36,7 +36,7 @@ def level_1(main_player, initial_platform, game):
     SingleFrameSpriteTrap(WIDTH + 300, 70, game, True, False, False, True)
     SingleFrameSpriteTrap(WIDTH + 500, 10, game, True, False, False, True)
 
-def level_2(main_player, initial_platform, game):
+def level_2(initial_platform, game):
     #Spawn a boulder
     SingleFrameSpriteTrap(WIDTH + 200, HEIGHT / 4 - 50, game, True, False, True)
 
@@ -63,25 +63,56 @@ def level_2(main_player, initial_platform, game):
         else:
             Platform(WIDTH + WIDTH - 400 + (initial_platform.get_size() * x), BOTTOM_PLATFORM_Y_COORDINATE, game)
 
-def level_3(main_player, initial_platform, game):
+def level_3(initial_platform, game):
     for j in range(5):
         plat = Platform(WIDTH + WIDTH / 2 + (initial_platform.get_size() * j) - 5, HEIGHT - 160, game)
         Platform(WIDTH + WIDTH * 3/4 + (initial_platform.get_size() * j) - 50, HEIGHT - 50, game)
-
-
-    for i in range(125, 251, 125):
-        Platform(2*WIDTH + i, HEIGHT - i, game)
-        Platform(2*WIDTH + initial_platform.get_size() + i, HEIGHT - i, game)
-        sec_plat = Platform(2*WIDTH + 2*initial_platform.get_size() + i, HEIGHT - i, game)
-        Platform(2*WIDTH + 3*initial_platform.get_size() + i, HEIGHT - i, game)
-        Platform(2*WIDTH + 4*initial_platform.get_size() + i, HEIGHT - i, game)
-
-
-    Platform(WIDTH + WIDTH - 60, HEIGHT - 150, game)
-    Platform(WIDTH + WIDTH - 60 + initial_platform.get_size(), HEIGHT - 150, game)
-
     Snake(plat, game)
-    Snake(sec_plat, game)
+
+def level_4(initial_platform, game):
+    for i in range(125, 251, 125):
+        Platform(WIDTH + i + 150, HEIGHT - i, game)
+        Platform(WIDTH + initial_platform.get_size() + i + 150, HEIGHT - i, game)
+        plat = Platform(WIDTH + 2*initial_platform.get_size() + i + 150, HEIGHT - i, game)
+        Platform(WIDTH + 3*initial_platform.get_size() + i + 150, HEIGHT - i, game)
+        Platform(WIDTH + 4*initial_platform.get_size() + i + 150, HEIGHT - i, game)
+        last_plat = Platform(WIDTH + 5*initial_platform.get_size() + i + 150, HEIGHT - i, game)
+    Snake(plat, game)
+
+    SingleFrameSpriteTrap(last_plat.rect.x + initial_platform.get_size(), last_plat.rect.y - SPIKE_NO_ANIMATION_HEIGHT_MARGIN, game, False)
+
+    for i in range(1, 3):
+        Platform(last_plat.rect.x + (initial_platform.get_size() * i) + 100, 250, game)
+
+def level_5(initial_platform, game):
+    """Small lava level"""
+    
+    plat = Platform(WIDTH + 70, HEIGHT / 2 + 100, game)
+    Platform(plat.rect.x - initial_platform.get_size(), plat.rect.y, game)
+        
+    for j in range(1, 18):
+        spew_fire = False
+        if j % 3 == 0:
+            spew_fire = True
+        else:
+            spew_fire = False
+
+        lava = Lava(plat.rect.x + (initial_platform.get_size() * j), plat.rect.y - 5, game, spew_fire)
+        Platform(lava.rect.x, lava.rect.y + initial_platform.get_size(False), game)
+        Platform(lava.rect.x, lava.rect.y + 2*initial_platform.get_size(False), game, False) #Concrete platform
+
+        if j % 3 == 0:
+            Platform(lava.rect.x + 25, lava.rect.y - 2*initial_platform.get_size(False), game)
+
+    Platform(lava.rect.x + initial_platform.get_size(False), plat.rect.y + 2, game)
+
+
+def level_6(initial_platform, game):
+    Platform(WIDTH + 5, HEIGHT / 2 + 200, game) #A reminder platform to show where the width of the screen is 
+                                                #When to display the next level
+
+
+
         
     
 

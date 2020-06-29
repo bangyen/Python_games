@@ -49,7 +49,7 @@ class Game():
         self.enemies = pygame.sprite.Group()
         self._load_data()
         self.level_index = 0
-        self.levels = [opening_level_part2, level_1, level_2, level_3]
+        self.levels = [opening_level_part2, level_1, level_2, level_3, level_4, level_5, level_6]
   
     def _load_data(self):
         self.main_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "enemies_maincharacter_spritesheet.png"))
@@ -197,10 +197,10 @@ class Game():
         #This function blits the upcomming next levels
         if self.draw_level: #draw the level once
             try:
-                self.levels[self.level_index](self.main_player, self.grass_platform, self) #self.levels is a list containing functions of the levels in levels.py
+                self.levels[self.level_index](self.grass_platform, self) #self.levels is a list containing functions of the levels in levels.py
             except IndexError:
-                #print("Index_error")
-                self.boss_level()
+                print("Index_error")
+                #self.boss_level()
 
             self.draw_level = False
 
@@ -334,15 +334,9 @@ class Game():
             Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
 
     def test_level(self):
-        """Function for designing levels (level 3)"""
-
-
-        """Level 3.5"""
-        for i in range(1, 25):
-            Platform(WIDTH + 10 + (self.grass_platform.get_size() * i), HEIGHT / i + 200, self)
-
-        SingleFrameSpriteTrap(WIDTH + 10 + (self.grass_platform.get_size() * 24), 0, self, True, False, True)
-
+        """Function for designing levels (level 5)"""
+        pass
+        
     def boss_level(self):
         pass
 

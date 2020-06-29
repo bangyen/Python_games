@@ -230,7 +230,7 @@ class FireBall(pygame.sprite.Sprite):
 
 class Lava(pygame.sprite.Sprite):
     def __init__(self, x, y, game, fireball=False):
-        self._layer = PLATFORM_LAYER
+        self._layer = LAVA_LAYER
         self.groups = game.all_sprites, game.lavas
         super().__init__(self.groups)
         self.game = game
