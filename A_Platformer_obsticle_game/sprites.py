@@ -42,7 +42,7 @@ class MainCharacter(pygame.sprite.Sprite):
 
     def _load_images(self):
         self.standing_frames_right = [self.game.main_sprite_sheet.get_image(17, 448, 34, 19, 2), self.game.main_sprite_sheet.get_image(36, 448, 34, 19, 2)]
-        self.standing_frames_left = [pygame.transform.flip(frame, True, False) for frame in self.standing_frames_right]
+        self.standing_frames_left = [pygame.transform.flip(frame, True, False) for frame in self.standing_frames_right] #transform.flip(image, flip_vertical, flip_horizontal)
         self.right_walking_frames = [self.game.main_sprite_sheet.get_image(55, 448, 33, 21, 2), 
                                      self.game.main_sprite_sheet.get_image(76, 448, 33, 21, 2), 
                                      self.game.main_sprite_sheet.get_image(97, 448, 33, 21, 2), 
@@ -100,7 +100,6 @@ class MainCharacter(pygame.sprite.Sprite):
             
     def update(self):
         self._animate()
-        # print(self.velocity.x, self.velocity.y)
 
         self.acceleration = vector(0, GRAVITY)
 
@@ -466,6 +465,78 @@ class Snake(pygame.sprite.Sprite):
                 self.run_once = True
         
         self._animate()
+
+class SwordChopper(pygame.sprite.Sprite):
+    def __init__(self, platform, scale_up_num, game, fell_off_platforms=True):
+        self._layer = ENEMY_LAYER
+        self.groups = game.all_sprites, game.enemies
+        super().__init__(self.groups)
+        self.game = game
+        self.scale_up_num = scale_up_num
+        self.spawn_plat = platform
+        self.fell_off_platforms = fell_off_platforms
+        self.last_update_time = 0
+        self.current_frame_index = 0
+        self._load_images()
+        self.image = self.img_list_left[0]
+        self.rect = self.image.get_rect()
+        self.rect.bottom = self.spawn_plat.rect.top 
+        self.rect.centerx = self.spawn_plat.rect.centerx
+        self.position = vector(self.rect.centerx, self.rect.bottom)
+        self.acceleration = vector(0, 0)
+        self.velocity = vector(0, 0)
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def _load_images(self):
+        self.img_list_right = [self.game.main_sprite_sheet.get_image(384, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(448, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(0, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(384, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(64, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(128, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(320, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(192, 320, 64, 64, self.scale_up_num),
+                               self.game.main_sprite_sheet.get_image(256, 320, 64, 64, self.scale_up_num)]
+
+        self.img_list_left = [pygame.transform.flip(frame, True, False) for frame in self.img_list_right]
+            
+
+    def _animate(self):
+        time_now = pygame.time.get_ticks()
+
+        if time_now - self.last_update_time > 500:
+            self.last_update_time = time_now
+            self.current_frame_index = (self.current_frame_index + 1) % len(self.img_list_left)
+            last_image_bottom = self.rect.bottom
+            if self.velocity.x > 0:
+                self.image = self.img_list_right[self.current_frame_index]
+            else:
+                self.image = self.img_list_left[self.current_frame_index]
+            self.rect = self.image.get_rect()
+            self.rect.bottom = last_image_bottom
+
+
+    def update(self):
+        self._animate()
+
+        #Constant x velocity but changing y velocity due to gravity
+        self.acceleration = vector(-SWORDCHOPPER_ACCELERATION, GRAVITY)
+        self.velocity.y += self.acceleration.y
+        self.position += self.velocity + self.acceleration
+
+        self.rect.midbottom = self.position
+
+        platform_hit = pygame.sprite.spritecollide(self, self.game.platforms, False, pygame.sprite.collide_mask)
+        if platform_hit:
+            self.position.y = platform_hit[0].rect.top
+            self.velocity.y = 0
+
+
+
+
+
+
+
         
 
 """One frame sprites"""

@@ -1,5 +1,5 @@
-#main_spritesheet
-[
+#enemies_maincharacter spritesheet
+main_dict = [
 {"spritename":"brick_grey.png","x":0,"y":0,"height":128,"width":128},
 {"spritename":"dirt_grass.png","x":128,"y":0,"height":128,"width":128},
 {"spritename":"dirt_snow.png","x":256,"y":0,"height":128,"width":128},

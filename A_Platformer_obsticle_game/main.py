@@ -177,8 +177,12 @@ class Game():
                     sprite.kill()
             for lavaball in self.fireballs:
                 lavaball.position.x -= camera_speed
-                if lavaball.position.x < 0:
+                if lavaball.position.x + 50 < 0: #+50 so the enemy fades out, not disappear
                     lavaball.kill()
+            for enemy in self.enemies:
+                enemy.position.x -= camera_speed
+                if enemy.position.x + 50 < 0:
+                    enemy.kill()
 
             self.main_player.position.x -= camera_speed 
 
@@ -283,7 +287,7 @@ class Game():
 
         """Uncomment the line below when done designing the level in test_level"""
         self._move_main_player_camera() 
-        self._change_level()
+        #self._change_level()
      
     def _draw(self):
         """Redraw window function which blits text on 
@@ -335,7 +339,19 @@ class Game():
 
     def test_level(self):
         """Function for designing levels (level 5)"""
-        pass
+        self.main_player = MainCharacter(40, HEIGHT - 50, self)
+        self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
+
+        for i in range(5):
+            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
+            mob_plat = Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + 400, HEIGHT / 2, self)
+            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + WIDTH * 3/4 - 50, BOTTOM_PLATFORM_Y_COORDINATE, self)
+
+        for i in range(1, 3):
+            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + 200, HEIGHT / 2 + 100, self)
+
+        SwordChopper(mob_plat, 2, self)
+        
         
     def boss_level(self):
         pass
@@ -359,8 +375,8 @@ def main():
     obsticle_game = Game()
 
     while obsticle_game.running:
-        #obsticle_game.test_level()
-        obsticle_game.opening_level_part1()
+        obsticle_game.test_level()
+        #obsticle_game.opening_level_part1()
         obsticle_game.run()
 
 main()

@@ -108,6 +108,7 @@ def level_5(initial_platform, game):
 
 
 def level_6(initial_platform, game):
+    """New enemy level copy paste from test level"""
     Platform(WIDTH + 5, HEIGHT / 2 + 200, game) #A reminder platform to show where the width of the screen is 
                                                 #When to display the next level
 

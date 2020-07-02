@@ -23,11 +23,12 @@ TITLE_LAYER = 2
 PIXEL_SIGN_LAYER = 2
 ENEMY_LAYER = 2
 
-#Main character's properties
+#Main character's and enemie's properties
 GRAVITY = 0.8
 ACCELERATION = 0.345 #0.4
 FRICTION = -0.09 # 0.07
 PLAYER_JUMP = -18
+SWORDCHOPPER_ACCELERATION = 2.1
 
 #Colors
 BLACK = (0, 0, 0)
