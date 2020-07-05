@@ -67,19 +67,8 @@ class Ball():
         window.blit(self.img, (self.x, self.y))
 
     def move(self, down, right):
-        if down:
-            self.x += 0
-            self.y += self.velocity
-        else:
-            self.x += 0
-            self.y -= self.velocity
-
-        if right:
-            self.x += self.velocity
-            self.y += 0
-        else:
-            self.x -= self.velocity
-            self.y += 0
+        self.x = self.x + self.velocity * [-1, 1][right]
+        self.y = self.x + self.velocity * [-1, 1][down]
 
     def increase_velocity(self):
         self.velocity += 0.25
