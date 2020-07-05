@@ -68,7 +68,7 @@ class Ball():
 
     def move(self, down, right):
         self.x = self.x + self.velocity * [-1, 1][right]
-        self.y = self.x + self.velocity * [-1, 1][down]
+        self.y = self.y + self.velocity * [-1, 1][down]
 
     def increase_velocity(self):
         self.velocity += 0.25
