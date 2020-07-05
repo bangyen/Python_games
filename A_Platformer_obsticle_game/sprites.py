@@ -38,6 +38,7 @@ class MainCharacter(pygame.sprite.Sprite):
         self.position = vector(x, y)
         self.velocity = vector(0, 0)
         self.acceleration = vector(0, 0)
+        self.friction = -0.09 
         self.mask = pygame.mask.from_surface(self.image)
 
     def _load_images(self):
@@ -102,7 +103,7 @@ class MainCharacter(pygame.sprite.Sprite):
         self._animate()
 
         self.acceleration = vector(0, GRAVITY)
-
+        
         keys = pygame.key.get_pressed()
         if self.game.main_player_can_move:
             if keys[pygame.K_LEFT]:
@@ -115,7 +116,7 @@ class MainCharacter(pygame.sprite.Sprite):
             pass
 
         #Friction phisics equations
-        self.acceleration.x += self.velocity.x * FRICTION
+        self.acceleration.x += self.velocity.x * self.friction
         self.velocity += self.acceleration
         #Motion phisics equation
         self.position += self.velocity + (0.5 * self.acceleration)
@@ -142,16 +143,20 @@ class MainCharacter(pygame.sprite.Sprite):
         return self.image.get_height()
 
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, game, grass=True):
-        self._layer = PLATFORM_LAYER
+    def __init__(self, x, y, game, grass=True, concrete=False, snow=False):
+        self._layer = PLATFORM_LAYER if not snow else SNOW_LAYER
         self.groups = game.all_sprites, game.platforms
         super().__init__(self.groups)
         self.game = game
-        if grass:
+        self.grass = grass
+        self.concrete = concrete
+        self.snow = snow
+        if self.grass:
             self.image = self.game.main_sprite_sheet.get_image(128, 0, 128, 128, 3, False)
-        else:
+        elif self.concrete:
             self.image = self.game.main_sprite_sheet.get_image(0, 0, 128, 128, 3, False)
-        self.image.set_colorkey(BLACK)
+        elif self.snow:
+            self.image = self.game.main_sprite_sheet.get_image(256, 0, 128, 128, 3, False)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -284,12 +289,11 @@ class SingleFrameSpriteTrap(pygame.sprite.Sprite):
             self.spike_go_up = True
             self.spike_go_down = False 
             self.image = game.traps_sprite_sheet.get_image(260, 1486, 160, 164, 4, False)
-            #self.image.set_colorkey(BLACK)
+        
 
         if self.stone or self.axe:
             self.axe_down = True
             the_image = game.traps_sprite_sheet.get_image(0, 0, 394, 394, 5, False) if self.stone else game.traps_sprite_sheet.get_image(0, 394, 372, 248, 5, False)
-            #the_image.set_colorkey(BLACK)
             self.stop_axe_image_list = [pygame.transform.rotate(the_image, angle) for angle in range(300, 360, 15)] #320
             self.random_num = random.randint(0, len(self.stop_axe_image_list) - 1)
             self.image_rotation_list = [pygame.transform.rotate(the_image, angle) for angle in range(0, 361, 90)]
@@ -467,14 +471,17 @@ class Snake(pygame.sprite.Sprite):
         self._animate()
 
 class SwordChopper(pygame.sprite.Sprite):
-    def __init__(self, platform, scale_up_num, game, fell_off_platforms=True):
+    def __init__(self, platform, platform_length, scale_up_num, game, fell_off_platforms=True, speed=2.1):
         self._layer = ENEMY_LAYER
         self.groups = game.all_sprites, game.enemies
         super().__init__(self.groups)
         self.game = game
         self.scale_up_num = scale_up_num
         self.spawn_plat = platform
+        self.type = "sword chopper"
+        self.length_of_platforms = platform_length
         self.fell_off_platforms = fell_off_platforms
+        self.acceleration_x_speed = speed
         self.last_update_time = 0
         self.current_frame_index = 0
         self._load_images()
@@ -482,6 +489,7 @@ class SwordChopper(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.bottom = self.spawn_plat.rect.top 
         self.rect.centerx = self.spawn_plat.rect.centerx
+        self.initial_x_position = self.rect.centerx
         self.position = vector(self.rect.centerx, self.rect.bottom)
         self.acceleration = vector(0, 0)
         self.velocity = vector(0, 0)
@@ -508,7 +516,7 @@ class SwordChopper(pygame.sprite.Sprite):
             self.last_update_time = time_now
             self.current_frame_index = (self.current_frame_index + 1) % len(self.img_list_left)
             last_image_bottom = self.rect.bottom
-            if self.velocity.x > 0:
+            if self.acceleration.x > 0:
                 self.image = self.img_list_right[self.current_frame_index]
             else:
                 self.image = self.img_list_left[self.current_frame_index]
@@ -518,18 +526,28 @@ class SwordChopper(pygame.sprite.Sprite):
 
     def update(self):
         self._animate()
+        #print(self.acceleration)
 
-        #Constant x velocity but changing y velocity due to gravity
-        self.acceleration = vector(-SWORDCHOPPER_ACCELERATION, GRAVITY)
+        if self.fell_off_platforms:
+            #Constant x velocity but changing y velocity due to gravity
+            self.acceleration = vector(-self.acceleration_x_speed, GRAVITY)
+        else:
+            if self.position.x <= self.initial_x_position - self.length_of_platforms:
+                self.acceleration = vector(self.acceleration_x_speed, GRAVITY)
+            elif self.position.x >= self.initial_x_position:
+                self.acceleration = vector(-self.acceleration_x_speed, GRAVITY)
+            
+
         self.velocity.y += self.acceleration.y
         self.position += self.velocity + self.acceleration
-
         self.rect.midbottom = self.position
+
 
         platform_hit = pygame.sprite.spritecollide(self, self.game.platforms, False, pygame.sprite.collide_mask)
         if platform_hit:
             self.position.y = platform_hit[0].rect.top
             self.velocity.y = 0
+            
 
 
 
@@ -558,7 +576,7 @@ class GameTitle(pygame.sprite.Sprite):
 
 class Sign(pygame.sprite.Sprite):
     def __init__(self, x, y, scale_num, game):
-        self._layer = TITLE_LAYER
+        self._layer = PIXEL_SIGN_LAYER
         self.groups = game.all_sprites, game.sign
         super().__init__(self.groups)
         self.scale_num = scale_num
@@ -575,7 +593,6 @@ class GraveStone(pygame.sprite.Sprite):
         super().__init__(self.groups)
         self.game = game
         self.image = game.traps_sprite_sheet.get_image(388, 3458, 100, 100, 2)
-        self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y

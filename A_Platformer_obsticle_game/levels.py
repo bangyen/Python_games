@@ -104,12 +104,30 @@ def level_5(initial_platform, game):
         if j % 3 == 0:
             Platform(lava.rect.x + 25, lava.rect.y - 2*initial_platform.get_size(False), game)
 
-    Platform(lava.rect.x + initial_platform.get_size(False), plat.rect.y + 2, game)
+    first_stair_plat = Platform(lava.rect.x + initial_platform.get_size(False), plat.rect.y + 2, game)
+    for k in range(4):
+        Platform(first_stair_plat.rect.x + (initial_platform.get_size() * k - 5), first_stair_plat.rect.y + (15 * k), game)
 
 
 def level_6(initial_platform, game):
-    """New enemy level copy paste from test level"""
-    Platform(WIDTH + 5, HEIGHT / 2 + 200, game) #A reminder platform to show where the width of the screen is 
+    """Swordchopper level"""
+    for i in range(4):
+        Platform(WIDTH + 150 + (initial_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, game)
+        high_mob_plat = Platform(WIDTH + 750 + (initial_platform.get_size() * i), -600, game)
+        Platform(WIDTH + 450 + (initial_platform.get_size() * i), HEIGHT / 2, game)
+        mob_plat = Platform(WIDTH + WIDTH * 3/4 - 120 + (initial_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, game)
+        plat_length = 4 * initial_platform.get_size()
+
+    for i in range(1, 3):
+        Platform(WIDTH + 300 + (initial_platform.get_size() * i), HEIGHT / 2 + 100, game)
+
+    SwordChopper(high_mob_plat, plat_length, 2, game) #Swordchopper that falls of the platforms
+    SwordChopper(mob_plat, plat_length, 2, game, False, 1.5) #Swordchopper that stays on the platforms
+
+
+def level_7(initial_platform, game):
+    """New level copy paste from test level"""
+    Platform(WIDTH + 5, 200, game) #A reminder platform to show where the width of the screen is 
                                                 #When to display the next level
 
 

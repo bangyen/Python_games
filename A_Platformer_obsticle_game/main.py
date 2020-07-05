@@ -46,10 +46,10 @@ class Game():
         self.fireballs = pygame.sprite.Group()
         self.traps = pygame.sprite.Group() 
         self.sign = pygame.sprite.Group()
-        self.enemies = pygame.sprite.Group()
+        self.enemies = pygame.sprite.Group() 
         self._load_data()
         self.level_index = 0
-        self.levels = [opening_level_part2, level_1, level_2, level_3, level_4, level_5, level_6]
+        self.levels = [opening_level_part2, level_1, level_2, level_3, level_4, level_5, level_6, level_7]
   
     def _load_data(self):
         self.main_sprite_sheet = SpritesheetParser(os.path.join(self.spritesheet_dir, "enemies_maincharacter_spritesheet.png"))
@@ -150,8 +150,9 @@ class Game():
             if enemy.type == "snake":
                 self.game_over_text = "was eaten by snakes"
                 return True
-            if enemy.type == "bleh":
-                pass
+            if enemy.type == "sword chopper":
+                self.game_over_text = "was chopped with a deadly sword to death"
+                return True
                 
     def _game_over_functionality(self, sound_when_dead, gameover_text_str):
         self._play_sound(sound_when_dead)
@@ -159,7 +160,7 @@ class Game():
         self.game_over_text = gameover_text_str
         self.game_over_screen()
 
-    def _move_main_player_camera(self):
+    def move_main_player_camera(self):
         """Move the camera's focuspoint further to the right"""
 
         camera_speed = max(abs(int(self.main_player.velocity.x // 3)), 2) + 2
@@ -175,18 +176,22 @@ class Game():
                 sprite.rect.x -= camera_speed 
                 if sprite.rect.right < 0:
                     sprite.kill()
+
             for lavaball in self.fireballs:
                 lavaball.position.x -= camera_speed
                 if lavaball.position.x + 50 < 0: #+50 so the enemy fades out, not disappear
                     lavaball.kill()
+ 
             for enemy in self.enemies:
-                enemy.position.x -= camera_speed
-                if enemy.position.x + 50 < 0:
-                    enemy.kill()
+                if enemy.type == "sword chopper":
+                    enemy.position.x -= camera_speed
+                    enemy.initial_x_position -= camera_speed
+                    if enemy.position.x + 50 < 0 or enemy.position.y > HEIGHT + 50:
+                        enemy.kill()
 
             self.main_player.position.x -= camera_speed 
 
-    def _change_level(self):
+    def change_level(self):
         """If the camera's x coordinate has reached the 
         width of the screen - 50 then blit the next level 
         and reset the camera to its initial x coordinate"""
@@ -207,6 +212,14 @@ class Game():
                 #self.boss_level()
 
             self.draw_level = False
+
+    def _adjust_player_platform_position(self, the_position):
+        """This function adjusts the main_player's y position when 
+        he jumps on a platform"""
+        if self.main_player.position.y >= the_position:
+            self.main_player.position.y = the_position
+            self.main_player.velocity.y = 0
+            self.main_player.jumping = False
 
     def game_over_collision(self, hits_platform):
         #Obsticle hit lists (mask collision -> pixel perfect collision)
@@ -242,14 +255,24 @@ class Game():
         self.all_sprites.update()
         
         #Collision (rect collision) with the platform and stop the main_player if he hits the top of the plaform
-        hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False)
+        hits_platform = pygame.sprite.spritecollide(self.main_player, self.platforms, False) #List of platforms that Joe collided with
         if self.main_player.velocity.y > 0: #going down due to gravity
             if hits_platform:
-                if self.main_player.position.y < hits_platform[0].rect.bottom:
-                    self.main_player.position.y = hits_platform[0].rect.top
-                    self.main_player.velocity.y = 0 # stop the main character
-                    self.main_player.jumping = False
-      
+                if hits_platform[0].snow:
+                    self.main_player.friction = -0.2 #Let Joe walk slower in the snow
+                    the_snow_spot = hits_platform[0].rect.top + hits_platform[0].get_size(False) // 2
+                
+                    if self.main_player.position.y > hits_platform[0].rect.top:
+                        if self.main_player.jumping:
+                            self.main_player.velocity.y *= SNOW_GRAVITY #Let Joe drown in the snow slowly
+
+                        self._adjust_player_platform_position(the_snow_spot) #Until he reaches the_snow_spot
+                else:
+                    self.main_player.on_snow_plat = False
+                    self.main_player.friction = -0.09   
+
+                    self._adjust_player_platform_position(hits_platform[0].rect.top)
+    
         #blit the viewing perspective from Joe when he is reading on the sign (key input = (r))
         if self.display_bigger_sign:
             if self.run_once:
@@ -286,8 +309,8 @@ class Game():
             self.main_player.position.x = 20
 
         """Uncomment the line below when done designing the level in test_level"""
-        self._move_main_player_camera() 
-        #self._change_level()
+        self.move_main_player_camera() 
+        self.change_level()
      
     def _draw(self):
         """Redraw window function which blits text on 
@@ -338,19 +361,16 @@ class Game():
             Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
 
     def test_level(self):
-        """Function for designing levels (level 5)"""
+        """Function for designing levels (level 7)"""
         self.main_player = MainCharacter(40, HEIGHT - 50, self)
         self.grass_platform = Platform(self.main_player.position.x - 40, BOTTOM_PLATFORM_Y_COORDINATE, self)
 
         for i in range(5):
-            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i), BOTTOM_PLATFORM_Y_COORDINATE, self)
-            mob_plat = Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + 400, HEIGHT / 2, self)
-            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + WIDTH * 3/4 - 50, BOTTOM_PLATFORM_Y_COORDINATE, self)
+            snow = Platform(140 + (self.grass_platform.get_size() * i), 300, self, False, False, True) #Snow
 
-        for i in range(1, 3):
-            Platform(self.main_player.position.x + (self.grass_platform.get_size() * i) + 200, HEIGHT / 2 + 100, self)
+        for k in range(6):
+            Platform(400 + (self.grass_platform.get_size() * k), HEIGHT / 2, self)
 
-        SwordChopper(mob_plat, 2, self)
         
         
     def boss_level(self):
